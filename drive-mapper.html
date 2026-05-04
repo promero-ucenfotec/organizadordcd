@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drive Mapper</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: #ffffff;
+  color: #1a1a1a;
+  min-height: 100vh;
+}
+
+.page {
+  max-width: 660px;
+  margin: 0 auto;
+  padding: 52px 24px 80px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 36px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #ebebeb;
+}
+
+.header-icon {
+  width: 40px; height: 40px;
+  background: #164a98;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.header-text h1 { font-size: 17px; font-weight: 600; color: #111; letter-spacing: -0.2px; }
+.header-text p { font-size: 13px; color: #888; margin-top: 2px; }
+
+/* Steps */
+.steps {
+  display: flex;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.step-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: #bbb; font-weight: 500; white-space: nowrap;
+}
+
+.step-item.active { color: #164a98; }
+.step-item.done { color: #16a34a; }
+
+.step-dot {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #f5f5f5; border: 1.5px solid #e0e0e0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 600; color: #bbb; flex-shrink: 0;
+}
+
+.step-item.active .step-dot { background: #eef2fb; border-color: #164a98; color: #164a98; }
+.step-item.done .step-dot { background: #f0fdf4; border-color: #16a34a; color: #16a34a; }
+
+.step-line { flex: 1; height: 1px; background: #e8e8e8; margin: 0 6px; }
+
+/* Cards */
+.card {
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 14px;
+  background: #fff;
+}
+
+.card.hidden { display: none; }
+
+.card-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.7px;
+  text-transform: uppercase; color: #aaa; margin-bottom: 18px;
+}
+
+/* Notice */
+.notice {
+  background: #fffbeb; border: 1px solid #fde68a;
+  border-radius: 8px; padding: 12px 14px;
+  font-size: 13px; color: #92400e; line-height: 1.65; margin-bottom: 16px;
+}
+.notice strong { font-weight: 600; }
+
+/* Details */
+details {
+  border: 1px solid #e8e8e8; border-radius: 8px;
+  margin-bottom: 16px; overflow: hidden;
+}
+
+details summary {
+  padding: 10px 14px; font-size: 13px; color: #555; cursor: pointer;
+  list-style: none; display: flex; align-items: center; gap: 7px;
+  user-select: none; font-weight: 500;
+}
+
+details summary:hover { background: #fafafa; }
+details[open] summary { border-bottom: 1px solid #e8e8e8; background: #fafafa; color: #1a1a1a; }
+
+.details-body {
+  padding: 14px 16px; font-size: 13px; color: #555;
+  line-height: 1.8; background: #fafafa;
+}
+
+.details-body ol { padding-left: 18px; }
+.details-body li { margin-bottom: 4px; }
+.details-body code {
+  background: #efefef; padding: 1px 5px; border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #164a98;
+}
+.details-body a { color: #164a98; }
+
+/* Fields */
+.field { margin-bottom: 13px; }
+.field label { display: block; font-size: 13px; font-weight: 500; color: #444; margin-bottom: 5px; }
+.field input {
+  width: 100%; height: 37px; padding: 0 11px;
+  border: 1px solid #ddd; border-radius: 7px;
+  font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+  color: #1a1a1a; background: #fff; outline: none;
+  transition: border-color 0.15s;
+}
+.field input:focus { border-color: #164a98; box-shadow: 0 0 0 3px rgba(22,74,152,0.07); }
+.field input::placeholder { color: #c0c0c0; }
+.field-hint { font-size: 11.5px; color: #aaa; margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 16px; border-radius: 7px;
+  font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 500;
+  border: none; cursor: pointer; transition: all 0.15s;
+}
+
+.btn-primary { background: #164a98; color: #fff; }
+.btn-primary:hover { background: #1a56b0; }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-google {
+  background: #fff; color: #3c3c3c;
+  border: 1px solid #ddd; box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+.btn-google:hover { border-color: #bbb; background: #fafafa; }
+
+.btn-ghost {
+  background: transparent; color: #555; border: 1px solid #ddd;
+}
+.btn-ghost:hover { background: #f5f5f5; }
+
+.btn-link {
+  background: transparent; color: #dc2626; border: none; font-size: 12px; padding: 6px 2px;
+}
+.btn-link:hover { color: #b91c1c; text-decoration: underline; }
+
+/* Auth */
+.auth-center { text-align: center; padding: 6px 0; }
+.auth-center p { font-size: 13px; color: #888; margin-bottom: 14px; }
+
+.user-row {
+  display: flex; align-items: center; gap: 11px;
+  padding: 11px 13px; background: #f0fdf4;
+  border: 1px solid #bbf7d0; border-radius: 8px; margin-bottom: 12px;
+}
+.user-row img { width: 33px; height: 33px; border-radius: 50%; border: 1.5px solid #22c55e; }
+.user-row .uname { font-size: 13.5px; font-weight: 500; }
+.user-row .uemail { font-size: 12px; color: #666; font-family: 'JetBrains Mono', monospace; }
+.pill {
+  margin-left: auto; font-size: 11px; font-weight: 500;
+  background: #dcfce7; color: #15803d; padding: 3px 9px;
+  border-radius: 20px; border: 1px solid #bbf7d0; white-space: nowrap;
+}
+
+.auth-actions { display: flex; justify-content: flex-end; margin-top: 4px; }
+
+/* Progress */
+#progress-card { display: none; }
+
+.prog-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+.prog-name { font-size: 13px; color: #444; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 75%; }
+.prog-count { font-size: 12px; color: #999; font-family: 'JetBrains Mono', monospace; }
+
+.bar-track { height: 3px; background: #f0f0f0; border-radius: 2px; overflow: hidden; margin-bottom: 14px; }
+.bar-fill { height: 100%; background: #164a98; border-radius: 2px; width: 0%; transition: width 0.4s; }
+
+.logbox {
+  background: #fafafa; border: 1px solid #efefef; border-radius: 8px;
+  padding: 11px 13px; max-height: 175px; overflow-y: auto;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.8;
+}
+.logbox::-webkit-scrollbar { width: 3px; }
+.logbox::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+.le { color: #999; }
+.le.ok { color: #16a34a; }
+.le.warn { color: #d97706; }
+.le.err { color: #dc2626; }
+.le.info { color: #164a98; }
+
+/* Result */
+#result-card { display: none; }
+
+.stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 18px; }
+.stat { background: #f7f8fa; border: 1px solid #efefef; border-radius: 8px; padding: 14px; text-align: center; }
+.stat-n { font-size: 24px; font-weight: 600; color: #164a98; display: block; letter-spacing: -0.5px; }
+.stat-l { font-size: 11.5px; color: #999; font-weight: 500; margin-top: 2px; }
+
+.result-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M3 6C3 4.9 3.9 4 5 4h14c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H5a2 2 0 01-2-2V6z" stroke="white" stroke-width="1.5" fill="none"/>
+        <path d="M3 8.5h18M7.5 4v5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M7 13h3M7 16.5h6" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="header-text">
+      <h1>Drive Mapper</h1>
+      <p>Exporta la jerarquía de carpetas de Drive a Google Sheets</p>
+    </div>
+  </div>
+
+  <!-- Steps -->
+  <div class="steps">
+    <div class="step-item active" id="step-1"><div class="step-dot">1</div>Configurar</div>
+    <div class="step-line"></div>
+    <div class="step-item" id="step-2"><div class="step-dot">2</div>Autenticar</div>
+    <div class="step-line"></div>
+    <div class="step-item" id="step-3"><div class="step-dot">3</div>Rutas</div>
+    <div class="step-line"></div>
+    <div class="step-item" id="step-4"><div class="step-dot">4</div>Mapear</div>
+    <div class="step-line"></div>
+    <div class="step-item" id="step-5"><div class="step-dot">5</div>Listo</div>
+  </div>
+
+  <!-- Paso 1: Client ID -->
+  <div class="card" id="setup-card">
+    <div class="card-label">Paso 1 — Configuración</div>
+
+    <div class="notice">
+      <strong>Requiere un OAuth Client ID de Google Cloud.</strong><br>
+      Es un proceso de ~5 minutos que se hace una sola vez. Expande las instrucciones abajo.
+    </div>
+
+    <details>
+      <summary>
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="8" r="6.5" stroke="#999" stroke-width="1.4"/>
+          <path d="M8 7.5v3.5M8 5v.8" stroke="#999" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        ¿Cómo obtener el Client ID?
+      </summary>
+      <div class="details-body">
+        <ol>
+          <li>Ve a <a href="https://console.cloud.google.com/" target="_blank">console.cloud.google.com</a> y crea o selecciona un proyecto</li>
+          <li>En <strong>APIs y servicios → Biblioteca</strong>, habilita <code>Google Drive API</code> y <code>Google Sheets API</code></li>
+          <li>Ve a <strong>Credenciales → Crear credenciales → ID de cliente OAuth 2.0</strong></li>
+          <li>Tipo de aplicación: <code>Aplicación web</code></li>
+          <li>En "Orígenes de JavaScript autorizados" agrega <code>null</code> (para archivo local)</li>
+          <li>Copia el Client ID (termina en <code>.apps.googleusercontent.com</code>)</li>
+          <li>En <strong>Pantalla de consentimiento</strong>, agrega tu correo como usuario de prueba</li>
+        </ol>
+      </div>
+    </details>
+
+    <div class="field">
+      <label>Google OAuth Client ID</label>
+      <input type="text" id="client-id-input" placeholder="xxxxxxxx.apps.googleusercontent.com">
+      <div class="field-hint">Se guarda en el navegador (localStorage)</div>
+    </div>
+
+    <button class="btn btn-primary" onclick="saveClientId()">
+      Continuar
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+
+  <!-- Paso 2: Auth -->
+  <div class="card hidden" id="auth-card">
+    <div class="card-label">Paso 2 — Autenticación Google</div>
+
+    <div id="user-row-wrap" class="hidden">
+      <div class="user-row">
+        <img id="user-photo" src="" alt="">
+        <div>
+          <div class="uname" id="user-name"></div>
+          <div class="uemail" id="user-email"></div>
+        </div>
+        <div class="pill">Conectado</div>
+      </div>
+    </div>
+
+    <div id="sign-in-wrap" class="auth-center">
+      <p>Autoriza acceso a Drive (solo lectura) y Sheets</p>
+      <button class="btn btn-google" onclick="signIn()">
+        <svg width="16" height="16" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        Iniciar sesión con Google
+      </button>
+    </div>
+
+    <div id="sign-out-wrap" class="auth-actions hidden">
+      <button class="btn btn-link" onclick="signOut()">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <!-- Paso 3: Rutas -->
+  <div class="card hidden" id="config-card">
+    <div class="card-label">Paso 3 — Rutas</div>
+
+    <div class="field">
+      <label>Carpeta de Google Drive a mapear</label>
+      <input type="text" id="folder-url" placeholder="https://drive.google.com/drive/folders/1ABC...">
+      <div class="field-hint">Enlace completo de la carpeta raíz</div>
+    </div>
+
+    <div class="field">
+      <label>Google Sheets destino</label>
+      <input type="text" id="sheets-url" placeholder="https://docs.google.com/spreadsheets/d/1XYZ.../edit">
+      <div class="field-hint">El mapa de jerarquía se escribirá aquí</div>
+    </div>
+
+    <div class="field-row" style="margin-bottom:16px;">
+      <div class="field" style="margin-bottom:0">
+        <label>Nombre de la hoja</label>
+        <input type="text" id="sheet-name" value="Drive Map">
+        <div class="field-hint">Se crea si no existe</div>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label>Límite de ítems</label>
+        <input type="text" id="max-items" value="5000">
+        <div class="field-hint">Máximo de filas</div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="startMapping()" id="run-btn">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M4 3l9 5-9 5V3z" fill="white"/></svg>
+      Iniciar mapeo
+    </button>
+  </div>
+
+  <!-- Paso 4: Progreso -->
+  <div class="card" id="progress-card">
+    <div class="card-label">Paso 4 — Procesando</div>
+    <div class="prog-header">
+      <span class="prog-name" id="progress-label">Inicializando...</span>
+      <span class="prog-count" id="progress-count">0 ítems</span>
+    </div>
+    <div class="bar-track"><div class="bar-fill" id="progress-bar"></div></div>
+    <div class="logbox" id="log-box"></div>
+  </div>
+
+  <!-- Paso 5: Resultado -->
+  <div class="card" id="result-card">
+    <div class="card-label">Paso 5 — Completado</div>
+    <div class="stats">
+      <div class="stat"><span class="stat-n" id="stat-folders">0</span><div class="stat-l">Carpetas</div></div>
+      <div class="stat"><span class="stat-n" id="stat-files">0</span><div class="stat-l">Archivos</div></div>
+      <div class="stat"><span class="stat-n" id="stat-rows">0</span><div class="stat-l">Filas escritas</div></div>
+    </div>
+    <div class="result-btns">
+      <button class="btn btn-primary" onclick="openSheet()">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="white" stroke-width="1.4"/><path d="M5 6h6M5 9h4" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
+        Abrir Google Sheets
+      </button>
+      <button class="btn btn-ghost" onclick="resetApp()">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 106-6H5M2 5v3h3" stroke="#555" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Mapear otra carpeta
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://apis.google.com/js/api.js"></script>
+<script src="https://accounts.google.com/gsi/client"></script>
+<script>
+let CLIENT_ID = localStorage.getItem('dm_cid') || '';
+let accessToken = null;
+let sheetsUrl = '';
+let stats = { folders: 0, files: 0, rows: 0 };
+const SCOPES = 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets';
+const MAX_D = 10;
+
+window.onload = () => {
+  if (CLIENT_ID) {
+    document.getElementById('client-id-input').value = CLIENT_ID;
+    show('auth-card'); setStep(2);
+  }
+};
+
+function saveClientId() {
+  const v = document.getElementById('client-id-input').value.trim();
+  if (!v || !v.includes('.apps.googleusercontent.com')) { alert('Client ID inválido.'); return; }
+  CLIENT_ID = v;
+  localStorage.setItem('dm_cid', CLIENT_ID);
+  show('auth-card'); setStep(2);
+}
+
+function signIn() {
+  google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID, scope: SCOPES,
+    callback: (resp) => {
+      if (resp.error) { log('Error auth: ' + resp.error, 'err'); return; }
+      accessToken = resp.access_token;
+      fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: 'Bearer ' + accessToken }
+      }).then(r => r.json()).then(u => {
+        document.getElementById('user-name').textContent = u.name || '';
+        document.getElementById('user-email').textContent = u.email || '';
+        document.getElementById('user-photo').src = u.picture || '';
+        show('user-row-wrap'); hide('sign-in-wrap'); show('sign-out-wrap');
+        show('config-card'); setStep(3);
+      });
+    }
+  }).requestAccessToken();
+}
+
+function signOut() {
+  accessToken = null;
+  hide('user-row-wrap'); show('sign-in-wrap'); hide('sign-out-wrap');
+  hide('config-card'); setStep(2);
+}
+
+function xFolderId(url) {
+  const m = url.match(/folders\/([a-zA-Z0-9_-]+)/);
+  if (m) return m[1];
+  if (/^[a-zA-Z0-9_-]{20,}$/.test(url.trim())) return url.trim();
+  return null;
+}
+function xSheetId(url) {
+  const m = url.match(/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+  return m ? m[1] : null;
+}
+
+async function startMapping() {
+  const fid = xFolderId(document.getElementById('folder-url').value.trim());
+  sheetsUrl = document.getElementById('sheets-url').value.trim();
+  const sid = xSheetId(sheetsUrl);
+  const sname = document.getElementById('sheet-name').value.trim() || 'Drive Map';
+  const max = parseInt(document.getElementById('max-items').value) || 5000;
+
+  if (!fid) { alert('No se pudo extraer el ID de la carpeta.'); return; }
+  if (!sid) { alert('No se pudo extraer el ID del Sheets.'); return; }
+
+  document.getElementById('run-btn').disabled = true;
+  document.getElementById('progress-card').style.display = 'block';
+  document.getElementById('result-card').style.display = 'none';
+  document.getElementById('log-box').innerHTML = '';
+  setStep(4);
+  stats = { folders: 0, files: 0, rows: 0 };
+
+  try {
+    log('Obteniendo carpeta raíz...', 'info');
+    const root = await dGet(fid);
+    log('Carpeta raíz: "' + root.name + '"', 'ok');
+    log('Preparando hoja...', 'info');
+    await prepSheet(sid, sname);
+    const rows = [mkHeader()];
+    log('Recorriendo estructura...', 'info');
+    await traverse(fid, root.name, root.webViewLink, 0, rows, max);
+    log('Escribiendo ' + rows.length + ' filas...', 'info');
+    await writeRows(sid, sname, rows);
+    log('Aplicando formato...', 'info');
+    await fmtSheet(sid, sname);
+    log('¡Completado!', 'ok');
+    document.getElementById('progress-bar').style.width = '100%';
+    showResult(rows.length - 1);
+    setStep(5);
+  } catch(e) {
+    log('Error: ' + e.message, 'err');
+  }
+  document.getElementById('run-btn').disabled = false;
+}
+
+async function dGet(id) {
+  const r = await fetch(`https://www.googleapis.com/drive/v3/files/${id}?fields=id,name,mimeType,webViewLink`,
+    { headers: { Authorization: 'Bearer ' + accessToken } });
+  if (!r.ok) throw new Error('Drive ' + r.status);
+  return r.json();
+}
+
+async function dList(fid, pt) {
+  let url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent("'"+fid+"' in parents and trashed=false")}&fields=nextPageToken,files(id,name,mimeType,webViewLink)&orderBy=folder,name&pageSize=1000`;
+  if (pt) url += '&pageToken=' + encodeURIComponent(pt);
+  const r = await fetch(url, { headers: { Authorization: 'Bearer ' + accessToken } });
+  if (!r.ok) throw new Error('Drive list ' + r.status);
+  return r.json();
+}
+
+async function traverse(fid, name, link, depth, rows, max) {
+  if (rows.length > max + 1) return;
+  rows.push(mkRow(name, link, depth, true));
+  stats.folders++;
+  updProg(name, rows.length, max);
+  let pt = null;
+  do {
+    const d = await dList(fid, pt);
+    for (const item of (d.files || [])) {
+      if (rows.length > max + 1) { log('Límite alcanzado', 'warn'); return; }
+      if (item.mimeType === 'application/vnd.google-apps.folder') {
+        await traverse(item.id, item.name, item.webViewLink, depth + 1, rows, max);
+      } else {
+        rows.push(mkRow(item.name, item.webViewLink, depth + 1, false));
+        stats.files++;
+        updProg(item.name, rows.length, max);
+      }
+    }
+    pt = d.nextPageToken || null;
+  } while (pt);
+}
+
+function mkHeader() {
+  const c = [];
+  for (let i = 0; i < MAX_D; i++) c.push(i === 0 ? 'Nombre / Jerarquía' : '');
+  c.push('Enlace', 'Tipo');
+  return c;
+}
+
+function mkRow(name, link, depth, isFolder) {
+  const c = [];
+  for (let i = 0; i < MAX_D; i++) c.push(i === depth ? name : '');
+  c.push(link || '', isFolder ? 'Carpeta' : 'Archivo');
+  return c;
+}
+
+async function sReq(path, method, body) {
+  const r = await fetch('https://sheets.googleapis.com/v4/spreadsheets' + path, {
+    method: method || 'GET',
+    headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!r.ok) throw new Error('Sheets ' + r.status + ': ' + await r.text());
+  return r.json();
+}
+
+async function prepSheet(sid, name) {
+  const meta = await sReq('/' + sid + '?fields=sheets.properties');
+  const ex = (meta.sheets || []).find(s => s.properties.title === name);
+  if (ex) {
+    await sReq('/' + sid + '/values/' + encodeURIComponent(name) + '!A:Z:clear', 'POST');
+    log('Hoja "' + name + '" limpiada', 'ok');
+  } else {
+    await sReq('/' + sid + ':batchUpdate', 'POST', { requests: [{ addSheet: { properties: { title: name } } }] });
+    log('Hoja "' + name + '" creada', 'ok');
+  }
+}
+
+async function writeRows(sid, name, rows) {
+  const CHUNK = 500;
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const chunk = rows.slice(i, i + CHUNK);
+    const range = name + '!A' + (i + 1);
+    await sReq('/' + sid + '/values/' + encodeURIComponent(range) + '?valueInputOption=USER_ENTERED', 'PUT',
+      { range, majorDimension: 'ROWS', values: chunk });
+    log('Filas ' + (i + 1) + '–' + (i + chunk.length), 'ok');
+  }
+  stats.rows = rows.length - 1;
+}
+
+async function fmtSheet(sid, name) {
+  const meta = await sReq('/' + sid + '?fields=sheets.properties');
+  const s = (meta.sheets || []).find(s => s.properties.title === name);
+  if (!s) return;
+  const sheetId = s.properties.sheetId;
+  await sReq('/' + sid + ':batchUpdate', 'POST', { requests: [
+    { repeatCell: {
+      range: { sheetId, startRowIndex: 0, endRowIndex: 1 },
+      cell: { userEnteredFormat: {
+        backgroundColor: { red: 0.086, green: 0.290, blue: 0.596 },
+        textFormat: { bold: true, foregroundColor: { red: 1, green: 1, blue: 1 }, fontSize: 10 },
+        horizontalAlignment: 'CENTER'
+      }},
+      fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment)'
+    }},
+    { updateSheetProperties: { properties: { sheetId, gridProperties: { frozenRowCount: 1 } }, fields: 'gridProperties.frozenRowCount' }},
+    { autoResizeDimensions: { dimensions: { sheetId, dimension: 'COLUMNS', startIndex: 0, endIndex: MAX_D + 2 } }}
+  ]});
+}
+
+function updProg(name, count, max) {
+  document.getElementById('progress-label').textContent = name.substring(0, 70);
+  document.getElementById('progress-count').textContent = count.toLocaleString() + ' ítems';
+  document.getElementById('progress-bar').style.width = Math.min((count / max) * 94, 94) + '%';
+}
+
+function log(msg, type) {
+  const box = document.getElementById('log-box');
+  const d = document.createElement('div');
+  d.className = 'le ' + (type || '');
+  d.textContent = msg;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+}
+
+function showResult(rows) {
+  document.getElementById('stat-folders').textContent = stats.folders.toLocaleString();
+  document.getElementById('stat-files').textContent = stats.files.toLocaleString();
+  document.getElementById('stat-rows').textContent = rows.toLocaleString();
+  document.getElementById('result-card').style.display = 'block';
+}
+
+function openSheet() { if (sheetsUrl) window.open(sheetsUrl, '_blank'); }
+
+function resetApp() {
+  document.getElementById('folder-url').value = '';
+  document.getElementById('progress-card').style.display = 'none';
+  document.getElementById('result-card').style.display = 'none';
+  document.getElementById('log-box').innerHTML = '';
+  document.getElementById('run-btn').disabled = false;
+  setStep(3);
+}
+
+function show(id) { document.getElementById(id).classList.remove('hidden'); }
+function hide(id) { document.getElementById(id).classList.add('hidden'); }
+
+function setStep(n) {
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById('step-' + i);
+    el.classList.remove('active', 'done');
+    if (i < n) el.classList.add('done');
+    else if (i === n) el.classList.add('active');
+  }
+}
+</script>
+</body>
+</html>
