@@ -7,197 +7,87 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: #fff; color: #1a1a1a; min-height: 100vh; }
+.page { max-width: 660px; margin: 0 auto; padding: 52px 24px 80px; }
 
-body {
-  font-family: 'Inter', sans-serif;
-  background: #ffffff;
-  color: #1a1a1a;
-  min-height: 100vh;
-}
-
-.page {
-  max-width: 660px;
-  margin: 0 auto;
-  padding: 52px 24px 80px;
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 36px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid #ebebeb;
-}
-
-.header-icon {
-  width: 40px; height: 40px;
-  background: #164a98;
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-
+.header { display: flex; align-items: center; gap: 14px; margin-bottom: 36px; padding-bottom: 24px; border-bottom: 1px solid #ebebeb; }
+.header-icon { width: 40px; height: 40px; background: #164a98; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .header-text h1 { font-size: 17px; font-weight: 600; color: #111; letter-spacing: -0.2px; }
 .header-text p { font-size: 13px; color: #888; margin-top: 2px; }
 
-/* Steps */
-.steps {
-  display: flex;
-  align-items: center;
-  margin-bottom: 28px;
-}
-
-.step-item {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 12px; color: #bbb; font-weight: 500; white-space: nowrap;
-}
-
+.steps { display: flex; align-items: center; margin-bottom: 28px; }
+.step-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #bbb; font-weight: 500; white-space: nowrap; }
 .step-item.active { color: #164a98; }
 .step-item.done { color: #16a34a; }
-
-.step-dot {
-  width: 20px; height: 20px; border-radius: 50%;
-  background: #f5f5f5; border: 1.5px solid #e0e0e0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 600; color: #bbb; flex-shrink: 0;
-}
-
+.step-dot { width: 20px; height: 20px; border-radius: 50%; background: #f5f5f5; border: 1.5px solid #e0e0e0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: #bbb; flex-shrink: 0; }
 .step-item.active .step-dot { background: #eef2fb; border-color: #164a98; color: #164a98; }
 .step-item.done .step-dot { background: #f0fdf4; border-color: #16a34a; color: #16a34a; }
-
 .step-line { flex: 1; height: 1px; background: #e8e8e8; margin: 0 6px; }
 
-/* Cards */
-.card {
-  border: 1px solid #e8e8e8;
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 14px;
-  background: #fff;
-}
-
+.card { border: 1px solid #e8e8e8; border-radius: 12px; padding: 24px; margin-bottom: 14px; background: #fff; }
 .card.hidden { display: none; }
+.card-label { font-size: 11px; font-weight: 600; letter-spacing: 0.7px; text-transform: uppercase; color: #aaa; margin-bottom: 18px; }
 
-.card-label {
-  font-size: 11px; font-weight: 600; letter-spacing: 0.7px;
-  text-transform: uppercase; color: #aaa; margin-bottom: 18px;
-}
-
-/* Notice */
-.notice {
-  background: #fffbeb; border: 1px solid #fde68a;
-  border-radius: 8px; padding: 12px 14px;
-  font-size: 13px; color: #92400e; line-height: 1.65; margin-bottom: 16px;
-}
+.notice { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 14px; font-size: 13px; color: #92400e; line-height: 1.65; margin-bottom: 16px; }
 .notice strong { font-weight: 600; }
 
-/* Details */
-details {
-  border: 1px solid #e8e8e8; border-radius: 8px;
-  margin-bottom: 16px; overflow: hidden;
-}
+.notice-info { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 14px; font-size: 13px; color: #1e40af; line-height: 1.65; margin-bottom: 16px; }
+.notice-info strong { font-weight: 600; }
 
-details summary {
-  padding: 10px 14px; font-size: 13px; color: #555; cursor: pointer;
-  list-style: none; display: flex; align-items: center; gap: 7px;
-  user-select: none; font-weight: 500;
-}
+.notice-success { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 14px; font-size: 13px; color: #166534; line-height: 1.65; margin-bottom: 16px; }
+.notice-success strong { font-weight: 600; }
 
+.notice-danger { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px 14px; font-size: 13px; color: #991b1b; line-height: 1.65; margin-bottom: 16px; }
+.notice-danger strong { font-weight: 600; }
+
+details { border: 1px solid #e8e8e8; border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
+details summary { padding: 10px 14px; font-size: 13px; color: #555; cursor: pointer; list-style: none; display: flex; align-items: center; gap: 7px; user-select: none; font-weight: 500; }
 details summary:hover { background: #fafafa; }
 details[open] summary { border-bottom: 1px solid #e8e8e8; background: #fafafa; color: #1a1a1a; }
-
-.details-body {
-  padding: 14px 16px; font-size: 13px; color: #555;
-  line-height: 1.8; background: #fafafa;
-}
-
+.details-body { padding: 14px 16px; font-size: 13px; color: #555; line-height: 1.8; background: #fafafa; }
 .details-body ol { padding-left: 18px; }
 .details-body li { margin-bottom: 4px; }
-.details-body code {
-  background: #efefef; padding: 1px 5px; border-radius: 4px;
-  font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #164a98;
-}
+.details-body code { background: #efefef; padding: 1px 5px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #164a98; }
 .details-body a { color: #164a98; }
 
-/* Fields */
 .field { margin-bottom: 13px; }
 .field label { display: block; font-size: 13px; font-weight: 500; color: #444; margin-bottom: 5px; }
-.field input {
-  width: 100%; height: 37px; padding: 0 11px;
-  border: 1px solid #ddd; border-radius: 7px;
-  font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
-  color: #1a1a1a; background: #fff; outline: none;
-  transition: border-color 0.15s;
-}
+.field input { width: 100%; height: 37px; padding: 0 11px; border: 1px solid #ddd; border-radius: 7px; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: #1a1a1a; background: #fff; outline: none; transition: border-color 0.15s; }
 .field input:focus { border-color: #164a98; box-shadow: 0 0 0 3px rgba(22,74,152,0.07); }
 .field input::placeholder { color: #c0c0c0; }
 .field-hint { font-size: 11.5px; color: #aaa; margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-/* Buttons */
-.btn {
-  display: inline-flex; align-items: center; gap: 7px;
-  padding: 9px 16px; border-radius: 7px;
-  font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 500;
-  border: none; cursor: pointer; transition: all 0.15s;
-}
-
+.btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 16px; border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 500; border: none; cursor: pointer; transition: all 0.15s; }
 .btn-primary { background: #164a98; color: #fff; }
 .btn-primary:hover { background: #1a56b0; }
 .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
-
-.btn-google {
-  background: #fff; color: #3c3c3c;
-  border: 1px solid #ddd; box-shadow: 0 1px 2px rgba(0,0,0,0.06);
-}
+.btn-google { background: #fff; color: #3c3c3c; border: 1px solid #ddd; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
 .btn-google:hover { border-color: #bbb; background: #fafafa; }
-
-.btn-ghost {
-  background: transparent; color: #555; border: 1px solid #ddd;
-}
+.btn-ghost { background: transparent; color: #555; border: 1px solid #ddd; }
 .btn-ghost:hover { background: #f5f5f5; }
-
-.btn-link {
-  background: transparent; color: #dc2626; border: none; font-size: 12px; padding: 6px 2px;
-}
+.btn-success { background: #16a34a; color: #fff; }
+.btn-success:hover { background: #15803d; }
+.btn-success:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-link { background: transparent; color: #dc2626; border: none; font-size: 12px; padding: 6px 2px; }
 .btn-link:hover { color: #b91c1c; text-decoration: underline; }
 
-/* Auth */
 .auth-center { text-align: center; padding: 6px 0; }
 .auth-center p { font-size: 13px; color: #888; margin-bottom: 14px; }
-
-.user-row {
-  display: flex; align-items: center; gap: 11px;
-  padding: 11px 13px; background: #f0fdf4;
-  border: 1px solid #bbf7d0; border-radius: 8px; margin-bottom: 12px;
-}
+.user-row { display: flex; align-items: center; gap: 11px; padding: 11px 13px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; margin-bottom: 12px; }
 .user-row img { width: 33px; height: 33px; border-radius: 50%; border: 1.5px solid #22c55e; }
 .user-row .uname { font-size: 13.5px; font-weight: 500; }
 .user-row .uemail { font-size: 12px; color: #666; font-family: 'JetBrains Mono', monospace; }
-.pill {
-  margin-left: auto; font-size: 11px; font-weight: 500;
-  background: #dcfce7; color: #15803d; padding: 3px 9px;
-  border-radius: 20px; border: 1px solid #bbf7d0; white-space: nowrap;
-}
-
+.pill { margin-left: auto; font-size: 11px; font-weight: 500; background: #dcfce7; color: #15803d; padding: 3px 9px; border-radius: 20px; border: 1px solid #bbf7d0; white-space: nowrap; }
 .auth-actions { display: flex; justify-content: flex-end; margin-top: 4px; }
 
-/* Progress */
 #progress-card { display: none; }
-
 .prog-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
 .prog-name { font-size: 13px; color: #444; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 75%; }
 .prog-count { font-size: 12px; color: #999; font-family: 'JetBrains Mono', monospace; }
-
 .bar-track { height: 3px; background: #f0f0f0; border-radius: 2px; overflow: hidden; margin-bottom: 14px; }
 .bar-fill { height: 100%; background: #164a98; border-radius: 2px; width: 0%; transition: width 0.4s; }
-
-.logbox {
-  background: #fafafa; border: 1px solid #efefef; border-radius: 8px;
-  padding: 11px 13px; max-height: 175px; overflow-y: auto;
-  font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.8;
-}
+.logbox { background: #fafafa; border: 1px solid #efefef; border-radius: 8px; padding: 11px 13px; max-height: 200px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.8; }
 .logbox::-webkit-scrollbar { width: 3px; }
 .logbox::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
 .le { color: #999; }
@@ -206,36 +96,44 @@ details[open] summary { border-bottom: 1px solid #e8e8e8; background: #fafafa; c
 .le.err { color: #dc2626; }
 .le.info { color: #164a98; }
 
-/* Result */
-#result-card { display: none; }
+/* Verificador */
+#verify-card { display: none; }
+.verify-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-bottom: 16px; }
+.vstat { background: #f7f8fa; border: 1px solid #efefef; border-radius: 8px; padding: 12px 14px; }
+.vstat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: #aaa; margin-bottom: 4px; }
+.vstat-val { font-size: 15px; font-weight: 600; color: #1a1a1a; font-family: 'JetBrains Mono', monospace; }
+.vstat-val.ok { color: #16a34a; }
+.vstat-val.warn { color: #d97706; }
+.vstat-val.err { color: #dc2626; }
+.verify-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 
+#result-card { display: none; }
 .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 18px; }
 .stat { background: #f7f8fa; border: 1px solid #efefef; border-radius: 8px; padding: 14px; text-align: center; }
 .stat-n { font-size: 24px; font-weight: 600; color: #164a98; display: block; letter-spacing: -0.5px; }
 .stat-l { font-size: 11.5px; color: #999; font-weight: 500; margin-top: 2px; }
-
 .result-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.divider { height: 1px; background: #f0f0f0; margin: 14px 0; }
 </style>
 </head>
 <body>
 <div class="page">
 
-  <!-- Header -->
   <div class="header">
     <div class="header-icon">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <path d="M3 6C3 4.9 3.9 4 5 4h14c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H5a2 2 0 01-2-2V6z" stroke="white" stroke-width="1.5" fill="none"/>
+        <path d="M3 6C3 4.9 3.9 4 5 4h14c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H5a2 2 0 01-2-2V6z" stroke="white" stroke-width="1.5"/>
         <path d="M3 8.5h18M7.5 4v5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
         <path d="M7 13h3M7 16.5h6" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
       </svg>
     </div>
     <div class="header-text">
       <h1>Drive Mapper</h1>
-      <p>Exporta la jerarquía de carpetas de Drive a Google Sheets</p>
+      <p>Exporta la jerarquía completa de carpetas de Drive a Google Sheets</p>
     </div>
   </div>
 
-  <!-- Steps -->
   <div class="steps">
     <div class="step-item active" id="step-1"><div class="step-dot">1</div>Configurar</div>
     <div class="step-line"></div>
@@ -243,26 +141,23 @@ details[open] summary { border-bottom: 1px solid #e8e8e8; background: #fafafa; c
     <div class="step-line"></div>
     <div class="step-item" id="step-3"><div class="step-dot">3</div>Rutas</div>
     <div class="step-line"></div>
-    <div class="step-item" id="step-4"><div class="step-dot">4</div>Mapear</div>
+    <div class="step-item" id="step-4"><div class="step-dot">4</div>Escanear</div>
     <div class="step-line"></div>
-    <div class="step-item" id="step-5"><div class="step-dot">5</div>Listo</div>
+    <div class="step-item" id="step-5"><div class="step-dot">5</div>Verificar</div>
+    <div class="step-line"></div>
+    <div class="step-item" id="step-6"><div class="step-dot">6</div>Escribir</div>
   </div>
 
   <!-- Paso 1: Client ID -->
   <div class="card" id="setup-card">
     <div class="card-label">Paso 1 — Configuración</div>
-
     <div class="notice">
       <strong>Requiere un OAuth Client ID de Google Cloud.</strong><br>
-      Es un proceso de ~5 minutos que se hace una sola vez. Expande las instrucciones abajo.
+      Proceso de ~5 minutos, una sola vez. Sin costo.
     </div>
-
     <details>
       <summary>
-        <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-          <circle cx="8" cy="8" r="6.5" stroke="#999" stroke-width="1.4"/>
-          <path d="M8 7.5v3.5M8 5v.8" stroke="#999" stroke-width="1.4" stroke-linecap="round"/>
-        </svg>
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#999" stroke-width="1.4"/><path d="M8 7.5v3.5M8 5v.8" stroke="#999" stroke-width="1.4" stroke-linecap="round"/></svg>
         ¿Cómo obtener el Client ID?
       </summary>
       <div class="details-body">
@@ -270,20 +165,18 @@ details[open] summary { border-bottom: 1px solid #e8e8e8; background: #fafafa; c
           <li>Ve a <a href="https://console.cloud.google.com/" target="_blank">console.cloud.google.com</a> y crea o selecciona un proyecto</li>
           <li>En <strong>APIs y servicios → Biblioteca</strong>, habilita <code>Google Drive API</code> y <code>Google Sheets API</code></li>
           <li>Ve a <strong>Credenciales → Crear credenciales → ID de cliente OAuth 2.0</strong></li>
-          <li>Tipo de aplicación: <code>Aplicación web</code></li>
-          <li>En "Orígenes de JavaScript autorizados" agrega <code>null</code> (para archivo local)</li>
+          <li>Tipo: <code>Aplicación web</code></li>
+          <li>En "Orígenes de JavaScript autorizados" agrega la URL donde tienes este archivo (ej: <code>https://tuusuario.github.io</code>)</li>
           <li>Copia el Client ID (termina en <code>.apps.googleusercontent.com</code>)</li>
           <li>En <strong>Pantalla de consentimiento</strong>, agrega tu correo como usuario de prueba</li>
         </ol>
       </div>
     </details>
-
     <div class="field">
       <label>Google OAuth Client ID</label>
       <input type="text" id="client-id-input" placeholder="xxxxxxxx.apps.googleusercontent.com">
       <div class="field-hint">Se guarda en el navegador (localStorage)</div>
     </div>
-
     <button class="btn btn-primary" onclick="saveClientId()">
       Continuar
       <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -293,7 +186,6 @@ details[open] summary { border-bottom: 1px solid #e8e8e8; background: #fafafa; c
   <!-- Paso 2: Auth -->
   <div class="card hidden" id="auth-card">
     <div class="card-label">Paso 2 — Autenticación Google</div>
-
     <div id="user-row-wrap" class="hidden">
       <div class="user-row">
         <img id="user-photo" src="" alt="">
@@ -304,20 +196,13 @@ details[open] summary { border-bottom: 1px solid #e8e8e8; background: #fafafa; c
         <div class="pill">Conectado</div>
       </div>
     </div>
-
     <div id="sign-in-wrap" class="auth-center">
       <p>Autoriza acceso a Drive (solo lectura) y Sheets</p>
       <button class="btn btn-google" onclick="signIn()">
-        <svg width="16" height="16" viewBox="0 0 24 24">
-          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-        </svg>
+        <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
         Iniciar sesión con Google
       </button>
     </div>
-
     <div id="sign-out-wrap" class="auth-actions hidden">
       <button class="btn btn-link" onclick="signOut()">Cerrar sesión</button>
     </div>
@@ -326,19 +211,16 @@ details[open] summary { border-bottom: 1px solid #e8e8e8; background: #fafafa; c
   <!-- Paso 3: Rutas -->
   <div class="card hidden" id="config-card">
     <div class="card-label">Paso 3 — Rutas</div>
-
     <div class="field">
       <label>Carpeta de Google Drive a mapear</label>
       <input type="text" id="folder-url" placeholder="https://drive.google.com/drive/folders/1ABC...">
       <div class="field-hint">Enlace completo de la carpeta raíz</div>
     </div>
-
     <div class="field">
       <label>Google Sheets destino</label>
       <input type="text" id="sheets-url" placeholder="https://docs.google.com/spreadsheets/d/1XYZ.../edit">
-      <div class="field-hint">El mapa de jerarquía se escribirá aquí</div>
+      <div class="field-hint">Aquí se escribirá el mapa de jerarquía</div>
     </div>
-
     <div class="field-row" style="margin-bottom:16px;">
       <div class="field" style="margin-bottom:0">
         <label>Nombre de la hoja</label>
@@ -347,20 +229,19 @@ details[open] summary { border-bottom: 1px solid #e8e8e8; background: #fafafa; c
       </div>
       <div class="field" style="margin-bottom:0">
         <label>Límite de ítems</label>
-        <input type="text" id="max-items" value="5000">
-        <div class="field-hint">Máximo de filas</div>
+        <input type="text" id="max-items" value="100000">
+        <div class="field-hint">Google Sheets soporta hasta 10M de celdas</div>
       </div>
     </div>
-
-    <button class="btn btn-primary" onclick="startMapping()" id="run-btn">
-      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M4 3l9 5-9 5V3z" fill="white"/></svg>
-      Iniciar mapeo
+    <button class="btn btn-primary" onclick="startScan()" id="scan-btn">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="white" stroke-width="1.4"/><path d="M11 11l3 3" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
+      Escanear carpeta
     </button>
   </div>
 
-  <!-- Paso 4: Progreso -->
+  <!-- Paso 4: Progreso escaneo -->
   <div class="card" id="progress-card">
-    <div class="card-label">Paso 4 — Procesando</div>
+    <div class="card-label">Paso 4 — Escaneando Drive</div>
     <div class="prog-header">
       <span class="prog-name" id="progress-label">Inicializando...</span>
       <span class="prog-count" id="progress-count">0 ítems</span>
@@ -369,9 +250,59 @@ details[open] summary { border-bottom: 1px solid #e8e8e8; background: #fafafa; c
     <div class="logbox" id="log-box"></div>
   </div>
 
-  <!-- Paso 5: Resultado -->
+  <!-- Paso 5: Verificador -->
+  <div class="card" id="verify-card">
+    <div class="card-label">Paso 5 — Verificación de capacidad</div>
+    <div id="verify-notice"></div>
+    <div class="verify-grid">
+      <div class="vstat">
+        <div class="vstat-label">Filas necesarias</div>
+        <div class="vstat-val" id="v-rows">—</div>
+      </div>
+      <div class="vstat">
+        <div class="vstat-label">Columnas necesarias</div>
+        <div class="vstat-val" id="v-cols">—</div>
+      </div>
+      <div class="vstat">
+        <div class="vstat-label">Filas disponibles en Sheets</div>
+        <div class="vstat-val" id="v-sheet-rows">—</div>
+      </div>
+      <div class="vstat">
+        <div class="vstat-label">Columnas disponibles</div>
+        <div class="vstat-val" id="v-sheet-cols">—</div>
+      </div>
+      <div class="vstat">
+        <div class="vstat-label">Profundidad máxima detectada</div>
+        <div class="vstat-val" id="v-depth">—</div>
+      </div>
+      <div class="vstat">
+        <div class="vstat-label">Celdas totales a escribir</div>
+        <div class="vstat-val" id="v-cells">—</div>
+      </div>
+    </div>
+    <div class="verify-actions">
+      <button class="btn btn-success" onclick="doWrite()" id="write-btn">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 12l3-3 3 3 6-6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Confirmar y escribir en Sheets
+      </button>
+      <button class="btn btn-ghost" onclick="resetApp()">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- Paso 6: Escritura -->
+  <div class="card hidden" id="write-card">
+    <div class="card-label">Paso 6 — Escribiendo en Sheets</div>
+    <div class="prog-header">
+      <span class="prog-name" id="write-label">Preparando...</span>
+      <span class="prog-count" id="write-count"></span>
+    </div>
+    <div class="bar-track"><div class="bar-fill" id="write-bar"></div></div>
+    <div class="logbox" id="write-log"></div>
+  </div>
+
+  <!-- Resultado -->
   <div class="card" id="result-card">
-    <div class="card-label">Paso 5 — Completado</div>
+    <div class="card-label">Completado</div>
     <div class="stats">
       <div class="stat"><span class="stat-n" id="stat-folders">0</span><div class="stat-l">Carpetas</div></div>
       <div class="stat"><span class="stat-n" id="stat-files">0</span><div class="stat-l">Archivos</div></div>
@@ -394,13 +325,20 @@ details[open] summary { border-bottom: 1px solid #e8e8e8; background: #fafafa; c
 <script src="https://apis.google.com/js/api.js"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script>
+// ── Estado global ──────────────────────────────────────────
 let CLIENT_ID = localStorage.getItem('dm_cid') || '';
 let accessToken = null;
 let sheetsUrl = '';
-let stats = { folders: 0, files: 0, rows: 0 };
-const SCOPES = 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets';
-const MAX_D = 10;
+let scannedRows = [];      // todas las filas escaneadas (en memoria)
+let maxDepthFound = 0;     // profundidad máxima real detectada
+let stats = { folders: 0, files: 0 };
 
+// Google Sheets soporta hasta 18278 columnas (ZZZ) y 10M de celdas
+const SHEETS_MAX_ROWS = 1000000;
+const SHEETS_MAX_COLS = 18278;
+const CHUNK_SIZE = 1000;   // filas por llamada a la API
+
+// ── Init ───────────────────────────────────────────────────
 window.onload = () => {
   if (CLIENT_ID) {
     document.getElementById('client-id-input').value = CLIENT_ID;
@@ -408,6 +346,7 @@ window.onload = () => {
   }
 };
 
+// ── Paso 1: guardar Client ID ──────────────────────────────
 function saveClientId() {
   const v = document.getElementById('client-id-input').value.trim();
   if (!v || !v.includes('.apps.googleusercontent.com')) { alert('Client ID inválido.'); return; }
@@ -416,11 +355,13 @@ function saveClientId() {
   show('auth-card'); setStep(2);
 }
 
+// ── Paso 2: autenticación ──────────────────────────────────
 function signIn() {
   google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID, scope: SCOPES,
+    client_id: CLIENT_ID,
+    scope: 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets',
     callback: (resp) => {
-      if (resp.error) { log('Error auth: ' + resp.error, 'err'); return; }
+      if (resp.error) { alert('Error de autenticación: ' + resp.error); return; }
       accessToken = resp.access_token;
       fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
         headers: { Authorization: 'Bearer ' + accessToken }
@@ -441,6 +382,7 @@ function signOut() {
   hide('config-card'); setStep(2);
 }
 
+// ── Helpers: extraer IDs ───────────────────────────────────
 function xFolderId(url) {
   const m = url.match(/folders\/([a-zA-Z0-9_-]+)/);
   if (m) return m[1];
@@ -452,97 +394,259 @@ function xSheetId(url) {
   return m ? m[1] : null;
 }
 
-async function startMapping() {
+// ── Paso 4: escanear Drive ─────────────────────────────────
+async function startScan() {
   const fid = xFolderId(document.getElementById('folder-url').value.trim());
   sheetsUrl = document.getElementById('sheets-url').value.trim();
-  const sid = xSheetId(sheetsUrl);
-  const sname = document.getElementById('sheet-name').value.trim() || 'Drive Map';
-  const max = parseInt(document.getElementById('max-items').value) || 5000;
+  const max = parseInt(document.getElementById('max-items').value) || 100000;
 
   if (!fid) { alert('No se pudo extraer el ID de la carpeta.'); return; }
-  if (!sid) { alert('No se pudo extraer el ID del Sheets.'); return; }
+  if (!xSheetId(sheetsUrl)) { alert('No se pudo extraer el ID del Sheets.'); return; }
 
-  document.getElementById('run-btn').disabled = true;
+  document.getElementById('scan-btn').disabled = true;
   document.getElementById('progress-card').style.display = 'block';
+  document.getElementById('verify-card').style.display = 'none';
+  document.getElementById('write-card').classList.add('hidden');
   document.getElementById('result-card').style.display = 'none';
   document.getElementById('log-box').innerHTML = '';
   setStep(4);
-  stats = { folders: 0, files: 0, rows: 0 };
+
+  scannedRows = [];
+  maxDepthFound = 0;
+  stats = { folders: 0, files: 0 };
 
   try {
     log('Obteniendo carpeta raíz...', 'info');
     const root = await dGet(fid);
     log('Carpeta raíz: "' + root.name + '"', 'ok');
-    log('Preparando hoja...', 'info');
-    await prepSheet(sid, sname);
-    const rows = [mkHeader()];
-    log('Recorriendo estructura...', 'info');
-    await traverse(fid, root.name, root.webViewLink, 0, rows, max);
-    log('Escribiendo ' + rows.length + ' filas...', 'info');
-    await writeRows(sid, sname, rows);
-    log('Aplicando formato...', 'info');
-    await fmtSheet(sid, sname);
-    log('¡Completado!', 'ok');
+    log('Escaneando estructura completa (sin límite de profundidad)...', 'info');
+
+    // Escaneo iterativo con pila (evita límite de recursión en carpetas muy profundas)
+    await scanIterative(fid, root.name, root.webViewLink, max);
+
+    log('Escaneo completado. ' + scannedRows.length + ' ítems encontrados.', 'ok');
     document.getElementById('progress-bar').style.width = '100%';
-    showResult(rows.length - 1);
-    setStep(5);
+
+    // Mostrar verificador
+    await showVerifier(xSheetId(sheetsUrl));
+
   } catch(e) {
     log('Error: ' + e.message, 'err');
+    console.error(e);
   }
-  document.getElementById('run-btn').disabled = false;
+  document.getElementById('scan-btn').disabled = false;
 }
 
-async function dGet(id) {
-  const r = await fetch(`https://www.googleapis.com/drive/v3/files/${id}?fields=id,name,mimeType,webViewLink`,
-    { headers: { Authorization: 'Bearer ' + accessToken } });
-  if (!r.ok) throw new Error('Drive ' + r.status);
-  return r.json();
-}
+// Escaneo iterativo con pila explícita — soporta cualquier profundidad
+async function scanIterative(rootId, rootName, rootLink, max) {
+  // Pila: cada elemento es { folderId, name, link, depth }
+  const stack = [{ folderId: rootId, name: rootName, link: rootLink, depth: 0 }];
 
-async function dList(fid, pt) {
-  let url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent("'"+fid+"' in parents and trashed=false")}&fields=nextPageToken,files(id,name,mimeType,webViewLink)&orderBy=folder,name&pageSize=1000`;
-  if (pt) url += '&pageToken=' + encodeURIComponent(pt);
-  const r = await fetch(url, { headers: { Authorization: 'Bearer ' + accessToken } });
-  if (!r.ok) throw new Error('Drive list ' + r.status);
-  return r.json();
-}
+  while (stack.length > 0) {
+    if (scannedRows.length >= max) {
+      log('Límite de ' + max.toLocaleString() + ' ítems alcanzado.', 'warn');
+      break;
+    }
 
-async function traverse(fid, name, link, depth, rows, max) {
-  if (rows.length > max + 1) return;
-  rows.push(mkRow(name, link, depth, true));
-  stats.folders++;
-  updProg(name, rows.length, max);
-  let pt = null;
-  do {
-    const d = await dList(fid, pt);
-    for (const item of (d.files || [])) {
-      if (rows.length > max + 1) { log('Límite alcanzado', 'warn'); return; }
+    const { folderId, name, link, depth } = stack.pop();
+
+    // Registrar esta carpeta
+    scannedRows.push({ name, link, depth, isFolder: true });
+    stats.folders++;
+    if (depth > maxDepthFound) maxDepthFound = depth;
+    updProg(name, scannedRows.length, max);
+
+    // Listar hijos
+    const children = await listAllChildren(folderId);
+
+    // Separar carpetas y archivos
+    const subFolders = [];
+    const files = [];
+    for (const item of children) {
       if (item.mimeType === 'application/vnd.google-apps.folder') {
-        await traverse(item.id, item.name, item.webViewLink, depth + 1, rows, max);
+        subFolders.push(item);
       } else {
-        rows.push(mkRow(item.name, item.webViewLink, depth + 1, false));
-        stats.files++;
-        updProg(item.name, rows.length, max);
+        files.push(item);
       }
     }
-    pt = d.nextPageToken || null;
-  } while (pt);
+
+    // Agregar archivos directamente
+    for (const f of files) {
+      if (scannedRows.length >= max) break;
+      scannedRows.push({ name: f.name, link: f.webViewLink, depth: depth + 1, isFolder: false });
+      stats.files++;
+      if ((depth + 1) > maxDepthFound) maxDepthFound = depth + 1;
+      updProg(f.name, scannedRows.length, max);
+    }
+
+    // Agregar subcarpetas a la pila en orden inverso (para mantener orden alfabético al hacer pop)
+    for (let i = subFolders.length - 1; i >= 0; i--) {
+      stack.push({
+        folderId: subFolders[i].id,
+        name: subFolders[i].name,
+        link: subFolders[i].webViewLink,
+        depth: depth + 1
+      });
+    }
+  }
 }
 
-function mkHeader() {
-  const c = [];
-  for (let i = 0; i < MAX_D; i++) c.push(i === 0 ? 'Nombre / Jerarquía' : '');
+// Lista TODOS los hijos de una carpeta con paginación automática
+async function listAllChildren(folderId) {
+  const all = [];
+  let pt = null;
+  do {
+    let url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent("'"+folderId+"' in parents and trashed=false")}&fields=nextPageToken,files(id,name,mimeType,webViewLink)&orderBy=folder,name&pageSize=1000`;
+    if (pt) url += '&pageToken=' + encodeURIComponent(pt);
+    const r = await fetch(url, { headers: { Authorization: 'Bearer ' + accessToken } });
+    if (!r.ok) throw new Error('Drive list ' + r.status);
+    const d = await r.json();
+    all.push(...(d.files || []));
+    pt = d.nextPageToken || null;
+  } while (pt);
+  return all;
+}
+
+// ── Paso 5: verificador ────────────────────────────────────
+async function showVerifier(spreadsheetId) {
+  setStep(5);
+  document.getElementById('verify-card').style.display = 'block';
+
+  const needRows = scannedRows.length + 1; // +1 por encabezado
+  const needCols = maxDepthFound + 1 + 2;  // profundidad + nombre en col propia + Enlace + Tipo
+
+  // Consultar el Sheets para ver cuántas filas/cols tiene actualmente
+  let sheetRows = SHEETS_MAX_ROWS;
+  let sheetCols = SHEETS_MAX_COLS;
+  let sheetName = document.getElementById('sheet-name').value.trim() || 'Drive Map';
+
+  try {
+    const meta = await sReq('/' + spreadsheetId + '?fields=sheets.properties');
+    const sheetObj = (meta.sheets || []).find(s => s.properties.title === sheetName);
+    if (sheetObj) {
+      sheetRows = sheetObj.properties.gridProperties.rowCount || SHEETS_MAX_ROWS;
+      sheetCols = sheetObj.properties.gridProperties.columnCount || SHEETS_MAX_COLS;
+    } else {
+      sheetRows = 1000;  // default para hoja nueva
+      sheetCols = 26;
+    }
+  } catch(e) {
+    // Si falla, asumir valores por defecto
+  }
+
+  const totalCells = needRows * needCols;
+  const rowsOk = needRows <= SHEETS_MAX_ROWS;
+  const colsOk = needCols <= SHEETS_MAX_COLS;
+  const canFit = rowsOk && colsOk;
+
+  // Si la hoja actual es muy pequeña, la expandiremos automáticamente al escribir
+  const willExpand = needRows > sheetRows || needCols > sheetCols;
+
+  document.getElementById('v-rows').textContent = needRows.toLocaleString();
+  document.getElementById('v-rows').className = 'vstat-val ' + (rowsOk ? 'ok' : 'err');
+
+  document.getElementById('v-cols').textContent = needCols.toLocaleString();
+  document.getElementById('v-cols').className = 'vstat-val ' + (colsOk ? 'ok' : 'err');
+
+  document.getElementById('v-sheet-rows').textContent = sheetRows.toLocaleString() + (willExpand ? ' (se expandirá)' : '');
+  document.getElementById('v-sheet-rows').className = 'vstat-val ' + (needRows <= SHEETS_MAX_ROWS ? 'ok' : 'err');
+
+  document.getElementById('v-sheet-cols').textContent = sheetCols.toLocaleString() + (needCols > sheetCols ? ' (se expandirá)' : '');
+  document.getElementById('v-sheet-cols').className = 'vstat-val ' + (needCols <= SHEETS_MAX_COLS ? 'ok' : 'err');
+
+  document.getElementById('v-depth').textContent = maxDepthFound + ' niveles';
+  document.getElementById('v-depth').className = 'vstat-val ok';
+
+  document.getElementById('v-cells').textContent = totalCells.toLocaleString();
+  document.getElementById('v-cells').className = 'vstat-val';
+
+  const noticeEl = document.getElementById('verify-notice');
+  if (!canFit) {
+    noticeEl.innerHTML = '<div class="notice-danger"><strong>No es posible escribir.</strong> Los datos exceden los límites de Google Sheets (máx. 10M de celdas). Reduce la cantidad de ítems.</div>';
+    document.getElementById('write-btn').disabled = true;
+  } else if (willExpand) {
+    noticeEl.innerHTML = '<div class="notice-info"><strong>La hoja se expandirá automáticamente</strong> para acomodar los datos antes de escribir. El contenido actual <strong>no se borrará</strong> hasta confirmar.</div>';
+    document.getElementById('write-btn').disabled = false;
+  } else {
+    noticeEl.innerHTML = '<div class="notice-success"><strong>Todo listo.</strong> Los datos caben perfectamente. El contenido actual de la hoja se reemplazará al confirmar.</div>';
+    document.getElementById('write-btn').disabled = false;
+  }
+}
+
+// ── Paso 6: escribir en Sheets ─────────────────────────────
+async function doWrite() {
+  const spreadsheetId = xSheetId(sheetsUrl);
+  const sheetName = document.getElementById('sheet-name').value.trim() || 'Drive Map';
+
+  document.getElementById('write-btn').disabled = true;
+  show('write-card');
+  setStep(6);
+  document.getElementById('write-log').innerHTML = '';
+
+  const needRows = scannedRows.length + 1;
+  const needCols = maxDepthFound + 1 + 2;
+
+  try {
+    wLog('Preparando hoja...', 'info');
+    const sheetId = await prepSheet(spreadsheetId, sheetName, needRows, needCols);
+    wLog('Hoja lista.', 'ok');
+
+    // Construir todas las filas en memoria
+    wLog('Construyendo filas...', 'info');
+    const rows = [mkHeader(maxDepthFound)];
+    for (const item of scannedRows) {
+      rows.push(mkRow(item.name, item.link, item.depth, item.isFolder, maxDepthFound));
+    }
+
+    // Escribir en chunks
+    wLog('Escribiendo ' + rows.length.toLocaleString() + ' filas en chunks de ' + CHUNK_SIZE + '...', 'info');
+    for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+      const chunk = rows.slice(i, i + CHUNK_SIZE);
+      const startRow = i + 1;
+      const range = sheetName + '!A' + startRow;
+      await sReq('/' + spreadsheetId + '/values/' + encodeURIComponent(range) + '?valueInputOption=USER_ENTERED', 'PUT',
+        { range, majorDimension: 'ROWS', values: chunk });
+      const pct = Math.round(((i + chunk.length) / rows.length) * 90);
+      document.getElementById('write-bar').style.width = pct + '%';
+      document.getElementById('write-label').textContent = 'Escribiendo...';
+      document.getElementById('write-count').textContent = (i + chunk.length).toLocaleString() + ' / ' + rows.length.toLocaleString();
+      wLog('Filas ' + startRow.toLocaleString() + '–' + (startRow + chunk.length - 1).toLocaleString(), 'ok');
+    }
+
+    wLog('Aplicando formato...', 'info');
+    await fmtSheet(spreadsheetId, sheetId, needCols);
+
+    document.getElementById('write-bar').style.width = '100%';
+    wLog('¡Escritura completada!', 'ok');
+
+    showResult(rows.length - 1);
+    setStep(6);
+
+  } catch(e) {
+    wLog('Error: ' + e.message, 'err');
+    console.error(e);
+    document.getElementById('write-btn').disabled = false;
+  }
+}
+
+// ── Construcción de filas ──────────────────────────────────
+function mkHeader(maxDepth) {
+  const c = ['Nombre'];
+  for (let i = 1; i <= maxDepth; i++) c.push('');  // columnas de indentación
   c.push('Enlace', 'Tipo');
   return c;
 }
 
-function mkRow(name, link, depth, isFolder) {
+function mkRow(name, link, depth, isFolder, maxDepth) {
   const c = [];
-  for (let i = 0; i < MAX_D; i++) c.push(i === depth ? name : '');
+  for (let i = 0; i <= maxDepth; i++) {
+    c.push(i === depth ? name : '');
+  }
   c.push(link || '', isFolder ? 'Carpeta' : 'Archivo');
   return c;
 }
 
+// ── Sheets API ─────────────────────────────────────────────
 async function sReq(path, method, body) {
   const r = await fetch('https://sheets.googleapis.com/v4/spreadsheets' + path, {
     method: method || 'GET',
@@ -553,58 +657,105 @@ async function sReq(path, method, body) {
   return r.json();
 }
 
-async function prepSheet(sid, name) {
-  const meta = await sReq('/' + sid + '?fields=sheets.properties');
-  const ex = (meta.sheets || []).find(s => s.properties.title === name);
-  if (ex) {
-    await sReq('/' + sid + '/values/' + encodeURIComponent(name) + '!A:Z:clear', 'POST');
-    log('Hoja "' + name + '" limpiada', 'ok');
+// Prepara la hoja: la crea/expande si hace falta, limpia su contenido
+async function prepSheet(spreadsheetId, sheetName, needRows, needCols) {
+  const meta = await sReq('/' + spreadsheetId + '?fields=sheets.properties');
+  const existing = (meta.sheets || []).find(s => s.properties.title === sheetName);
+
+  let sheetId;
+  const requests = [];
+
+  if (!existing) {
+    // Crear hoja nueva con el tamaño exacto necesario
+    const res = await sReq('/' + spreadsheetId + ':batchUpdate', 'POST', {
+      requests: [{ addSheet: { properties: {
+        title: sheetName,
+        gridProperties: { rowCount: Math.max(needRows + 10, 1000), columnCount: Math.max(needCols + 2, 26) }
+      }}}]
+    });
+    sheetId = res.replies[0].addSheet.properties.sheetId;
+    wLog('Hoja "' + sheetName + '" creada.', 'ok');
   } else {
-    await sReq('/' + sid + ':batchUpdate', 'POST', { requests: [{ addSheet: { properties: { title: name } } }] });
-    log('Hoja "' + name + '" creada', 'ok');
+    sheetId = existing.properties.sheetId;
+    const curRows = existing.properties.gridProperties.rowCount || 1000;
+    const curCols = existing.properties.gridProperties.columnCount || 26;
+
+    // Expandir si hace falta
+    if (needRows > curRows || needCols > curCols) {
+      requests.push({ updateSheetProperties: {
+        properties: {
+          sheetId,
+          gridProperties: {
+            rowCount: Math.max(needRows + 10, curRows),
+            columnCount: Math.max(needCols + 2, curCols)
+          }
+        },
+        fields: 'gridProperties.rowCount,gridProperties.columnCount'
+      }});
+      wLog('Hoja expandida a ' + Math.max(needRows+10,curRows) + ' filas × ' + Math.max(needCols+2,curCols) + ' cols.', 'ok');
+    }
+
+    // Limpiar contenido AHORA (justo antes de escribir)
+    await sReq('/' + spreadsheetId + '/values/' + encodeURIComponent(sheetName) + '!A:ZZZ:clear', 'POST');
+    wLog('Contenido anterior limpiado.', 'ok');
   }
+
+  if (requests.length > 0) {
+    await sReq('/' + spreadsheetId + ':batchUpdate', 'POST', { requests });
+  }
+
+  return sheetId;
 }
 
-async function writeRows(sid, name, rows) {
-  const CHUNK = 500;
-  for (let i = 0; i < rows.length; i += CHUNK) {
-    const chunk = rows.slice(i, i + CHUNK);
-    const range = name + '!A' + (i + 1);
-    await sReq('/' + sid + '/values/' + encodeURIComponent(range) + '?valueInputOption=USER_ENTERED', 'PUT',
-      { range, majorDimension: 'ROWS', values: chunk });
-    log('Filas ' + (i + 1) + '–' + (i + chunk.length), 'ok');
-  }
-  stats.rows = rows.length - 1;
-}
-
-async function fmtSheet(sid, name) {
-  const meta = await sReq('/' + sid + '?fields=sheets.properties');
-  const s = (meta.sheets || []).find(s => s.properties.title === name);
-  if (!s) return;
-  const sheetId = s.properties.sheetId;
-  await sReq('/' + sid + ':batchUpdate', 'POST', { requests: [
+async function fmtSheet(spreadsheetId, sheetId, numCols) {
+  await sReq('/' + spreadsheetId + ':batchUpdate', 'POST', { requests: [
     { repeatCell: {
       range: { sheetId, startRowIndex: 0, endRowIndex: 1 },
       cell: { userEnteredFormat: {
         backgroundColor: { red: 0.086, green: 0.290, blue: 0.596 },
         textFormat: { bold: true, foregroundColor: { red: 1, green: 1, blue: 1 }, fontSize: 10 },
-        horizontalAlignment: 'CENTER'
+        horizontalAlignment: 'LEFT'
       }},
       fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment)'
     }},
-    { updateSheetProperties: { properties: { sheetId, gridProperties: { frozenRowCount: 1 } }, fields: 'gridProperties.frozenRowCount' }},
-    { autoResizeDimensions: { dimensions: { sheetId, dimension: 'COLUMNS', startIndex: 0, endIndex: MAX_D + 2 } }}
+    { updateSheetProperties: {
+      properties: { sheetId, gridProperties: { frozenRowCount: 1 } },
+      fields: 'gridProperties.frozenRowCount'
+    }},
+    { autoResizeDimensions: {
+      dimensions: { sheetId, dimension: 'COLUMNS', startIndex: 0, endIndex: numCols }
+    }}
   ]});
 }
 
+// ── Drive API ──────────────────────────────────────────────
+async function dGet(id) {
+  const r = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${id}?fields=id,name,mimeType,webViewLink`,
+    { headers: { Authorization: 'Bearer ' + accessToken } }
+  );
+  if (!r.ok) throw new Error('Drive GET ' + r.status);
+  return r.json();
+}
+
+// ── UI helpers ─────────────────────────────────────────────
 function updProg(name, count, max) {
-  document.getElementById('progress-label').textContent = name.substring(0, 70);
+  document.getElementById('progress-label').textContent = name.substring(0, 72);
   document.getElementById('progress-count').textContent = count.toLocaleString() + ' ítems';
-  document.getElementById('progress-bar').style.width = Math.min((count / max) * 94, 94) + '%';
+  document.getElementById('progress-bar').style.width = Math.min((count / max) * 90, 90) + '%';
 }
 
 function log(msg, type) {
   const box = document.getElementById('log-box');
+  const d = document.createElement('div');
+  d.className = 'le ' + (type || '');
+  d.textContent = msg;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+}
+
+function wLog(msg, type) {
+  const box = document.getElementById('write-log');
   const d = document.createElement('div');
   d.className = 'le ' + (type || '');
   d.textContent = msg;
@@ -622,11 +773,15 @@ function showResult(rows) {
 function openSheet() { if (sheetsUrl) window.open(sheetsUrl, '_blank'); }
 
 function resetApp() {
+  scannedRows = [];
+  maxDepthFound = 0;
   document.getElementById('folder-url').value = '';
   document.getElementById('progress-card').style.display = 'none';
+  document.getElementById('verify-card').style.display = 'none';
+  document.getElementById('write-card').classList.add('hidden');
   document.getElementById('result-card').style.display = 'none';
+  document.getElementById('scan-btn').disabled = false;
   document.getElementById('log-box').innerHTML = '';
-  document.getElementById('run-btn').disabled = false;
   setStep(3);
 }
 
@@ -634,7 +789,7 @@ function show(id) { document.getElementById(id).classList.remove('hidden'); }
 function hide(id) { document.getElementById(id).classList.add('hidden'); }
 
 function setStep(n) {
-  for (let i = 1; i <= 5; i++) {
+  for (let i = 1; i <= 6; i++) {
     const el = document.getElementById('step-' + i);
     el.classList.remove('active', 'done');
     if (i < n) el.classList.add('done');
