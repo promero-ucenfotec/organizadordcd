@@ -115,6 +115,41 @@ details[open] summary { border-bottom: 1px solid #e8e8e8; background: #fafafa; c
 .result-btns { display: flex; gap: 10px; flex-wrap: wrap; }
 
 .divider { height: 1px; background: #f0f0f0; margin: 14px 0; }
+
+/* ── Diff / Update ──────────────────────────────────────── */
+.btn-update { background: #0f4c81; color: #fff; }
+.btn-update:hover { background: #1560a0; }
+.btn-update:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.diff-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; align-items: center; justify-content: center; }
+.diff-overlay.open { display: flex; }
+.diff-modal { background: #fff; border-radius: 14px; width: 92%; max-width: 580px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.18); overflow: hidden; }
+.diff-head { padding: 20px 22px 16px; border-bottom: 1px solid #efefef; display: flex; align-items: baseline; gap: 10px; }
+.diff-head h2 { font-size: 15px; font-weight: 600; color: #111; flex: 1; }
+.diff-head button { background: none; border: none; font-size: 18px; color: #aaa; cursor: pointer; line-height: 1; padding: 0 2px; }
+.diff-head button:hover { color: #555; }
+.diff-summary { display: flex; gap: 8px; padding: 14px 22px; border-bottom: 1px solid #efefef; flex-wrap: wrap; }
+.diff-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.badge-add { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+.badge-del { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+.badge-ren { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+.badge-none { background: #f5f5f5; color: #888; border: 1px solid #e0e0e0; }
+.diff-body { overflow-y: auto; flex: 1; padding: 8px 0; }
+.diff-body::-webkit-scrollbar { width: 4px; }
+.diff-body::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+.diff-section { padding: 8px 22px 4px; }
+.diff-section-title { font-size: 11px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; color: #aaa; margin-bottom: 6px; }
+.diff-item { font-size: 12.5px; padding: 5px 9px; border-radius: 6px; margin-bottom: 3px; font-family: 'JetBrains Mono', monospace; line-height: 1.5; display: flex; align-items: flex-start; gap: 6px; }
+.diff-item .di-icon { flex-shrink: 0; margin-top: 1px; font-size: 11px; font-weight: 700; }
+.diff-item .di-text { word-break: break-all; }
+.diff-item .di-sub { color: #999; font-size: 11px; display: block; margin-top: 1px; }
+.di-add { background: #f0fdf4; color: #166534; }
+.di-del { background: #fef2f2; color: #991b1b; }
+.di-ren { background: #fffbeb; color: #92400e; }
+.diff-empty { text-align: center; color: #aaa; font-size: 13px; padding: 32px 0; }
+.diff-foot { padding: 14px 22px; border-top: 1px solid #efefef; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.diff-foot-note { font-size: 12px; color: #aaa; flex: 1; }
+
 </style>
 </head>
 <body>
@@ -230,13 +265,37 @@ details[open] summary { border-bottom: 1px solid #e8e8e8; background: #fafafa; c
       <div class="field" style="margin-bottom:0">
         <label>Límite de ítems</label>
         <input type="text" id="max-items" value="100000">
-        <div class="field-hint">Google Sheets soporta hasta 10M de celdas</div>
+        <div class="field-hint">Streaming activo: se escribe cada 2000 ítems</div>
       </div>
     </div>
     <button class="btn btn-primary" onclick="startScan()" id="scan-btn">
       <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="white" stroke-width="1.4"/><path d="M11 11l3 3" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
       Escanear carpeta
     </button>
+    <button class="btn btn-update" onclick="startUpdate()" id="update-btn" style="margin-left:8px;">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 112.5 5.5M2.5 2v3.5H6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Detectar cambios
+    </button>
+  </div>
+
+  <!-- Modal diff -->
+  <div class="diff-overlay" id="diff-overlay">
+    <div class="diff-modal">
+      <div class="diff-head">
+        <h2>Cambios detectados en Drive</h2>
+        <button onclick="closeDiff()">✕</button>
+      </div>
+      <div class="diff-summary" id="diff-summary"></div>
+      <div class="diff-body" id="diff-body"></div>
+      <div class="diff-foot">
+        <span class="diff-foot-note" id="diff-foot-note"></span>
+        <button class="btn btn-ghost" onclick="closeDiff()">Cancelar</button>
+        <button class="btn btn-success" id="diff-apply-btn" onclick="applyUpdate()">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2.5 8.5l3.5 3.5 7-7" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Aplicar cambios
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Paso 4: Progreso escaneo -->
@@ -329,14 +388,23 @@ details[open] summary { border-bottom: 1px solid #e8e8e8; background: #fafafa; c
 let CLIENT_ID = localStorage.getItem('dm_cid') || '';
 let accessToken = null;
 let sheetsUrl = '';
-let scannedRows = [];      // todas las filas escaneadas (en memoria)
+let scannedRows = [];      // buffer en memoria (se vacía al hacer streaming)
 let maxDepthFound = 0;     // profundidad máxima real detectada
 let stats = { folders: 0, files: 0 };
+let totalWritten = 0;      // filas ya escritas en Sheets (streaming)
+let streamingActive = false;
+let scanComplete = false;
+let streamSpreadsheetId = null;
+let streamSheetName = null;
+let streamSheetId = null;
 
 // Google Sheets soporta hasta 18278 columnas (ZZZ) y 10M de celdas
 const SHEETS_MAX_ROWS = 1000000;
 const SHEETS_MAX_COLS = 18278;
-const CHUNK_SIZE = 1000;   // filas por llamada a la API
+const CHUNK_SIZE = 1000;      // filas por llamada a la API de Sheets
+const STREAM_THRESHOLD = 2000; // escribir a Sheets cada N ítems acumulados
+const CONCURRENCY = 5;         // carpetas que se listan en paralelo
+const CHECKPOINT_KEY = 'dm_checkpoint'; // sessionStorage key
 
 // ── Init ───────────────────────────────────────────────────
 window.onload = () => {
@@ -413,22 +481,59 @@ async function startScan() {
 
   scannedRows = [];
   maxDepthFound = 0;
+  totalWritten = 0;
+  streamingActive = false;
+  scanComplete = false;
   stats = { folders: 0, files: 0 };
+  window._updateNewMap = undefined;
+
+  // Preparar streaming: crear/limpiar hoja desde el inicio
+  streamSpreadsheetId = xSheetId(sheetsUrl);
+  streamSheetName = document.getElementById('sheet-name').value.trim() || 'Drive Map';
+  streamSheetId = null;
 
   try {
     log('Obteniendo carpeta raíz...', 'info');
     const root = await dGet(fid);
     log('Carpeta raíz: "' + root.name + '"', 'ok');
-    log('Escaneando estructura completa (sin límite de profundidad)...', 'info');
+    log('Iniciando escaneo con concurrencia ' + CONCURRENCY + ' + streaming cada ' + STREAM_THRESHOLD.toLocaleString() + ' ítems...', 'info');
 
-    // Escaneo iterativo con pila (evita límite de recursión en carpetas muy profundas)
-    await scanIterative(fid, root.name, root.webViewLink, max);
+    // Verificar checkpoint de sesión
+    const cp = sessionStorage.getItem(CHECKPOINT_KEY);
+    let resumeStack = null;
+    if (cp) {
+      try {
+        const cpData = JSON.parse(cp);
+        if (cpData.folderId === fid) {
+          if (confirm('Se detectó un escaneo anterior interrumpido (' + cpData.scanned.toLocaleString() + ' ítems). ¿Desea retomarlo?')) {
+            resumeStack = cpData.stack;
+            totalWritten = cpData.written || 0;
+            maxDepthFound = cpData.maxDepth || 0;
+            stats = cpData.stats || { folders: 0, files: 0 };
+            log('Retomando desde checkpoint (' + cpData.scanned.toLocaleString() + ' ítems previos ya en Sheets)...', 'warn');
+          }
+        }
+      } catch(e) { /* checkpoint corrupto, ignorar */ }
+    }
 
-    log('Escaneo completado. ' + scannedRows.length + ' ítems encontrados.', 'ok');
+    await scanWithPool(fid, root.name, root.webViewLink, max, resumeStack);
+
+    // Flush final: escribir lo que quede en el buffer
+    if (scannedRows.length > 0) {
+      await streamFlush(true);
+    }
+
+    sessionStorage.removeItem(CHECKPOINT_KEY);
+    scanComplete = true;
+
+    const totalItems = totalWritten + scannedRows.length;
+    log('Escaneo completado. ' + (stats.folders + stats.files).toLocaleString() + ' ítems encontrados.', 'ok');
+    if (streamingActive) {
+      log(totalWritten.toLocaleString() + ' filas ya escritas en Sheets durante el escaneo.', 'ok');
+    }
     document.getElementById('progress-bar').style.width = '100%';
 
-    // Mostrar verificador
-    await showVerifier(xSheetId(sheetsUrl));
+    await showVerifier(streamSpreadsheetId);
 
   } catch(e) {
     log('Error: ' + e.message, 'err');
@@ -437,56 +542,213 @@ async function startScan() {
   document.getElementById('scan-btn').disabled = false;
 }
 
-// Escaneo iterativo con pila explícita — soporta cualquier profundidad
-async function scanIterative(rootId, rootName, rootLink, max) {
-  // Pila: cada elemento es { folderId, name, link, depth }
-  const stack = [{ folderId: rootId, name: rootName, link: rootLink, depth: 0 }];
+// ── Escaneo con pool de concurrencia ──────────────────────
+// Procesa hasta CONCURRENCY carpetas en paralelo sin superar el límite de Drive API
+async function scanWithPool(rootId, rootName, rootLink, max, resumeStack) {
+  // Cola de trabajo: cada elemento es { folderId, name, link, depth }
+  const queue = resumeStack || [{ folderId: rootId, name: rootName, link: rootLink, depth: 0 }];
+  let active = 0;
+  let done = false;
+  let errors = 0;
 
-  while (stack.length > 0) {
-    if (scannedRows.length >= max) {
-      log('Límite de ' + max.toLocaleString() + ' ítems alcanzado.', 'warn');
-      break;
+  // Semáforo simple basado en Promise
+  const results = [];
+
+  async function processOne(item) {
+    const { folderId, name, link, depth } = item;
+
+    // Registrar esta carpeta (con su ID de Drive)
+    scannedRows.push({ id: folderId, name, link, depth, isFolder: true });
+    stats.folders++;
+    if (depth > maxDepthFound) maxDepthFound = depth;
+    updProg(name, stats.folders + stats.files, max);
+
+    // Listar hijos (con retry en 429)
+    let children;
+    try {
+      children = await listAllChildrenWithRetry(folderId);
+    } catch(e) {
+      errors++;
+      log('⚠ No se pudo listar "' + name + '": ' + e.message, 'warn');
+      return [];
     }
 
-    const { folderId, name, link, depth } = stack.pop();
+    const subFolders = [];
+    for (const item of children) {
+      if ((stats.folders + stats.files) >= max) break;
+      if (item.mimeType === 'application/vnd.google-apps.folder') {
+        subFolders.push(item);
+      } else {
+        scannedRows.push({ id: item.id, name: item.name, link: item.webViewLink, depth: depth + 1, isFolder: false });
+        stats.files++;
+        if ((depth + 1) > maxDepthFound) maxDepthFound = depth + 1;
+      }
+    }
 
-    // Registrar esta carpeta
+    // Guardar checkpoint periódicamente
+    if ((stats.folders + stats.files) % 500 === 0) {
+      saveCheckpoint(rootId, queue);
+    }
+
+    // Trigger streaming si el buffer supera el umbral
+    if (scannedRows.length >= STREAM_THRESHOLD) {
+      await streamFlush(false);
+    }
+
+    // Retornar sub-carpetas para encolar (con ID)
+    return subFolders.map(sf => ({ folderId: sf.id, name: sf.name, link: sf.webViewLink, depth: depth + 1 }));
+  }
+
+  // Pool loop: mantiene hasta CONCURRENCY tareas activas
+  return new Promise((resolve, reject) => {
+    let pending = [...queue];
+    queue.length = 0; // vaciamos para reusar como cola dinámica
+
+    function pump() {
+      while (active < CONCURRENCY && pending.length > 0 && (stats.folders + stats.files) < max) {
+        const item = pending.shift();
+        active++;
+        processOne(item).then(newItems => {
+          active--;
+          if (newItems.length > 0) {
+            // Insertar al frente mantiene DFS (orden similar al original)
+            pending.unshift(...newItems);
+          }
+          if (active === 0 && pending.length === 0) {
+            resolve();
+          } else {
+            pump();
+          }
+        }).catch(e => {
+          active--;
+          reject(e);
+        });
+      }
+      // Si llegamos al límite de ítems y no hay nada activo
+      if ((stats.folders + stats.files) >= max && active === 0) {
+        log('Límite de ' + max.toLocaleString() + ' ítems alcanzado.', 'warn');
+        resolve();
+      }
+    }
+
+    pump();
+    // Caso borde: queue vacío desde el inicio
+    if (pending.length === 0) resolve();
+  });
+}
+
+// ── Checkpoint ─────────────────────────────────────────────
+function saveCheckpoint(folderId, queue) {
+  try {
+    sessionStorage.setItem(CHECKPOINT_KEY, JSON.stringify({
+      folderId,
+      stack: queue.slice(0, 200), // guardar solo las primeras 200 carpetas pendientes
+      scanned: stats.folders + stats.files,
+      written: totalWritten,
+      maxDepth: maxDepthFound,
+      stats: { ...stats },
+      ts: Date.now()
+    }));
+  } catch(e) { /* sessionStorage lleno, ignorar */ }
+}
+
+// ── Streaming: escribir buffer a Sheets mientras se escanea ─
+async function streamFlush(isFinal) {
+  if (scannedRows.length === 0) return;
+
+  const batch = scannedRows.splice(0, scannedRows.length); // vaciar buffer
+
+  if (!streamingActive) {
+    // Primera vez: preparar la hoja y escribir el header
+    log('Preparando hoja para escritura en streaming...', 'info');
+    try {
+      // Crear hoja con tamaño inicial generoso; se expandirá si hace falta
+      streamSheetId = await prepSheet(streamSpreadsheetId, streamSheetName, 50000, 30);
+      // Escribir header
+      const header = mkHeader(20); // 20 niveles de profundidad máxima provisional
+      await sReq('/' + streamSpreadsheetId + '/values/' + encodeURIComponent(streamSheetName) + '!A1?valueInputOption=USER_ENTERED',
+        'PUT', { range: streamSheetName + '!A1', majorDimension: 'ROWS', values: [header] });
+      totalWritten = 0;
+      streamingActive = true;
+      log('Hoja lista. Escribiendo en streaming...', 'ok');
+    } catch(e) {
+      // Si falla el streaming, reagregar al buffer y continuar solo en memoria
+      scannedRows.unshift(...batch);
+      log('Streaming no disponible, modo memoria activado: ' + e.message, 'warn');
+      return;
+    }
+  }
+
+  // Escribir el batch en chunks
+  const rows = batch.map(item => mkRow(item.name, item.link, item.depth, item.isFolder, 20, item.id));
+
+  // Si estamos en modo update, acumular en el mapa en lugar de escribir a Sheets
+  if (window._updateNewMap !== undefined) {
+    for (const item of batch) {
+      if (item.id) window._updateNewMap[item.id] = item;
+    }
+    totalWritten += rows.length;
+    if (!isFinal) log('Escaneados: ' + (totalWritten).toLocaleString() + ' (acumulando para diff...)', 'info');
+    return;
+  }
+  for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+    const chunk = rows.slice(i, i + CHUNK_SIZE);
+    const startRow = totalWritten + 2 + i; // +2: fila 1 es header
+    const range = streamSheetName + '!A' + startRow;
+    try {
+      await sReq('/' + streamSpreadsheetId + '/values/' + encodeURIComponent(range) + '?valueInputOption=USER_ENTERED',
+        'PUT', { range, majorDimension: 'ROWS', values: chunk });
+    } catch(e) {
+      log('Error al escribir streaming chunk: ' + e.message, 'warn');
+    }
+  }
+
+  totalWritten += rows.length;
+  if (!isFinal) {
+    log('Streaming: ' + totalWritten.toLocaleString() + ' filas escritas (escaneo continúa...)', 'info');
+  }
+}
+
+// Lista TODOS los hijos con retry automático en 429 (rate limit)
+async function listAllChildrenWithRetry(folderId, retries = 3) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await listAllChildren(folderId);
+    } catch(e) {
+      if (attempt < retries && (e.message.includes('429') || e.message.includes('500'))) {
+        const wait = Math.pow(2, attempt) * 1000 + Math.random() * 500;
+        log('Rate limit, esperando ' + Math.round(wait/1000) + 's...', 'warn');
+        await new Promise(r => setTimeout(r, wait));
+      } else {
+        throw e;
+      }
+    }
+  }
+}
+
+// Escaneo iterativo LEGACY — se conserva pero ya no se usa en el flujo principal
+async function scanIterative(rootId, rootName, rootLink, max) {
+  const stack = [{ folderId: rootId, name: rootName, link: rootLink, depth: 0 }];
+  while (stack.length > 0) {
+    if (scannedRows.length >= max) { log('Límite de ' + max.toLocaleString() + ' ítems alcanzado.', 'warn'); break; }
+    const { folderId, name, link, depth } = stack.pop();
     scannedRows.push({ name, link, depth, isFolder: true });
     stats.folders++;
     if (depth > maxDepthFound) maxDepthFound = depth;
     updProg(name, scannedRows.length, max);
-
-    // Listar hijos
     const children = await listAllChildren(folderId);
-
-    // Separar carpetas y archivos
     const subFolders = [];
-    const files = [];
     for (const item of children) {
-      if (item.mimeType === 'application/vnd.google-apps.folder') {
-        subFolders.push(item);
-      } else {
-        files.push(item);
+      if (item.mimeType === 'application/vnd.google-apps.folder') { subFolders.push(item); }
+      else {
+        scannedRows.push({ name: item.name, link: item.webViewLink, depth: depth + 1, isFolder: false });
+        stats.files++;
+        if ((depth + 1) > maxDepthFound) maxDepthFound = depth + 1;
+        updProg(item.name, scannedRows.length, max);
       }
     }
-
-    // Agregar archivos directamente
-    for (const f of files) {
-      if (scannedRows.length >= max) break;
-      scannedRows.push({ name: f.name, link: f.webViewLink, depth: depth + 1, isFolder: false });
-      stats.files++;
-      if ((depth + 1) > maxDepthFound) maxDepthFound = depth + 1;
-      updProg(f.name, scannedRows.length, max);
-    }
-
-    // Agregar subcarpetas a la pila en orden inverso (para mantener orden alfabético al hacer pop)
     for (let i = subFolders.length - 1; i >= 0; i--) {
-      stack.push({
-        folderId: subFolders[i].id,
-        name: subFolders[i].name,
-        link: subFolders[i].webViewLink,
-        depth: depth + 1
-      });
+      stack.push({ folderId: subFolders[i].id, name: subFolders[i].name, link: subFolders[i].webViewLink, depth: depth + 1 });
     }
   }
 }
@@ -512,7 +774,8 @@ async function showVerifier(spreadsheetId) {
   setStep(5);
   document.getElementById('verify-card').style.display = 'block';
 
-  const needRows = scannedRows.length + 1; // +1 por encabezado
+  const totalItems = totalWritten + scannedRows.length;
+  const needRows = totalItems + 1; // +1 por encabezado
   const needCols = maxDepthFound + 1 + 2;  // profundidad + nombre en col propia + Enlace + Tipo
 
   // Consultar el Sheets para ver cuántas filas/cols tiene actualmente
@@ -527,19 +790,15 @@ async function showVerifier(spreadsheetId) {
       sheetRows = sheetObj.properties.gridProperties.rowCount || SHEETS_MAX_ROWS;
       sheetCols = sheetObj.properties.gridProperties.columnCount || SHEETS_MAX_COLS;
     } else {
-      sheetRows = 1000;  // default para hoja nueva
+      sheetRows = 1000;
       sheetCols = 26;
     }
-  } catch(e) {
-    // Si falla, asumir valores por defecto
-  }
+  } catch(e) { /* usar defaults */ }
 
   const totalCells = needRows * needCols;
   const rowsOk = needRows <= SHEETS_MAX_ROWS;
   const colsOk = needCols <= SHEETS_MAX_COLS;
   const canFit = rowsOk && colsOk;
-
-  // Si la hoja actual es muy pequeña, la expandiremos automáticamente al escribir
   const willExpand = needRows > sheetRows || needCols > sheetCols;
 
   document.getElementById('v-rows').textContent = needRows.toLocaleString();
@@ -564,6 +823,9 @@ async function showVerifier(spreadsheetId) {
   if (!canFit) {
     noticeEl.innerHTML = '<div class="notice-danger"><strong>No es posible escribir.</strong> Los datos exceden los límites de Google Sheets (máx. 10M de celdas). Reduce la cantidad de ítems.</div>';
     document.getElementById('write-btn').disabled = true;
+  } else if (streamingActive) {
+    noticeEl.innerHTML = '<div class="notice-success"><strong>' + totalWritten.toLocaleString() + ' filas ya escritas durante el escaneo.</strong> Solo queda aplicar el formato final y corregir el encabezado de columnas con la profundidad real (' + maxDepthFound + ' niveles).</div>';
+    document.getElementById('write-btn').disabled = false;
   } else if (willExpand) {
     noticeEl.innerHTML = '<div class="notice-info"><strong>La hoja se expandirá automáticamente</strong> para acomodar los datos antes de escribir. El contenido actual <strong>no se borrará</strong> hasta confirmar.</div>';
     document.getElementById('write-btn').disabled = false;
@@ -583,44 +845,87 @@ async function doWrite() {
   setStep(6);
   document.getElementById('write-log').innerHTML = '';
 
-  const needRows = scannedRows.length + 1;
-  const needCols = maxDepthFound + 1 + 2;
-
   try {
-    wLog('Preparando hoja...', 'info');
-    const sheetId = await prepSheet(spreadsheetId, sheetName, needRows, needCols);
-    wLog('Hoja lista.', 'ok');
+    if (streamingActive) {
+      // MODO STREAMING: los datos ya están en Sheets, solo corregir header y formato
+      wLog('Datos ya escritos durante el escaneo (' + totalWritten.toLocaleString() + ' filas).', 'ok');
+      wLog('Corrigiendo encabezado con profundidad real (' + maxDepthFound + ' niveles)...', 'info');
 
-    // Construir todas las filas en memoria
-    wLog('Construyendo filas...', 'info');
-    const rows = [mkHeader(maxDepthFound)];
-    for (const item of scannedRows) {
-      rows.push(mkRow(item.name, item.link, item.depth, item.isFolder, maxDepthFound));
+      // Actualizar header con la profundidad real
+      const realHeader = mkHeader(maxDepthFound);
+      await sReq('/' + spreadsheetId + '/values/' + encodeURIComponent(sheetName) + '!A1?valueInputOption=USER_ENTERED',
+        'PUT', { range: sheetName + '!A1', majorDimension: 'ROWS', values: [realHeader] });
+      wLog('Encabezado corregido.', 'ok');
+
+      // Expandir hoja si la profundidad real requiere más columnas que las 20 provisionales
+      const needCols = maxDepthFound + 1 + 2;
+      if (needCols > 20 + 2) {
+        const meta = await sReq('/' + spreadsheetId + '?fields=sheets.properties');
+        const sheetObj = (meta.sheets || []).find(s => s.properties.title === sheetName);
+        if (sheetObj) {
+          const sid = sheetObj.properties.sheetId;
+          const curCols = sheetObj.properties.gridProperties.columnCount || 26;
+          if (needCols > curCols) {
+            await sReq('/' + spreadsheetId + ':batchUpdate', 'POST', {
+              requests: [{ updateSheetProperties: {
+                properties: { sheetId: sid, gridProperties: { columnCount: needCols + 2 } },
+                fields: 'gridProperties.columnCount'
+              }}]
+            });
+            wLog('Columnas expandidas a ' + (needCols + 2) + '.', 'ok');
+          }
+          wLog('Aplicando formato...', 'info');
+          await fmtSheet(spreadsheetId, sid, needCols);
+        }
+      } else {
+        wLog('Aplicando formato...', 'info');
+        // Obtener sheetId para formato
+        const meta = await sReq('/' + spreadsheetId + '?fields=sheets.properties');
+        const sheetObj = (meta.sheets || []).find(s => s.properties.title === sheetName);
+        if (sheetObj) await fmtSheet(spreadsheetId, sheetObj.properties.sheetId, needCols);
+      }
+
+      document.getElementById('write-bar').style.width = '100%';
+      wLog('¡Completado!', 'ok');
+      showResult(totalWritten);
+
+    } else {
+      // MODO CLÁSICO: todo en memoria, escribir ahora
+      const needRows = scannedRows.length + 1;
+      const needCols = maxDepthFound + 1 + 3; // +3: Enlace + Tipo + ID
+
+      wLog('Preparando hoja...', 'info');
+      const sheetId = await prepSheet(spreadsheetId, sheetName, needRows, needCols);
+      wLog('Hoja lista.', 'ok');
+
+      wLog('Construyendo filas...', 'info');
+      const rows = [mkHeader(maxDepthFound)];
+      for (const item of scannedRows) {
+        rows.push(mkRow(item.name, item.link, item.depth, item.isFolder, maxDepthFound, item.id));
+      }
+
+      wLog('Escribiendo ' + rows.length.toLocaleString() + ' filas en chunks de ' + CHUNK_SIZE + '...', 'info');
+      for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+        const chunk = rows.slice(i, i + CHUNK_SIZE);
+        const startRow = i + 1;
+        const range = sheetName + '!A' + startRow;
+        await sReq('/' + spreadsheetId + '/values/' + encodeURIComponent(range) + '?valueInputOption=USER_ENTERED', 'PUT',
+          { range, majorDimension: 'ROWS', values: chunk });
+        const pct = Math.round(((i + chunk.length) / rows.length) * 90);
+        document.getElementById('write-bar').style.width = pct + '%';
+        document.getElementById('write-label').textContent = 'Escribiendo...';
+        document.getElementById('write-count').textContent = (i + chunk.length).toLocaleString() + ' / ' + rows.length.toLocaleString();
+        wLog('Filas ' + startRow.toLocaleString() + '–' + (startRow + chunk.length - 1).toLocaleString(), 'ok');
+      }
+
+      wLog('Aplicando formato...', 'info');
+      await fmtSheet(spreadsheetId, sheetId, needCols);
+
+      document.getElementById('write-bar').style.width = '100%';
+      wLog('¡Escritura completada!', 'ok');
+      showResult(rows.length - 1);
+      setStep(6);
     }
-
-    // Escribir en chunks
-    wLog('Escribiendo ' + rows.length.toLocaleString() + ' filas en chunks de ' + CHUNK_SIZE + '...', 'info');
-    for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
-      const chunk = rows.slice(i, i + CHUNK_SIZE);
-      const startRow = i + 1;
-      const range = sheetName + '!A' + startRow;
-      await sReq('/' + spreadsheetId + '/values/' + encodeURIComponent(range) + '?valueInputOption=USER_ENTERED', 'PUT',
-        { range, majorDimension: 'ROWS', values: chunk });
-      const pct = Math.round(((i + chunk.length) / rows.length) * 90);
-      document.getElementById('write-bar').style.width = pct + '%';
-      document.getElementById('write-label').textContent = 'Escribiendo...';
-      document.getElementById('write-count').textContent = (i + chunk.length).toLocaleString() + ' / ' + rows.length.toLocaleString();
-      wLog('Filas ' + startRow.toLocaleString() + '–' + (startRow + chunk.length - 1).toLocaleString(), 'ok');
-    }
-
-    wLog('Aplicando formato...', 'info');
-    await fmtSheet(spreadsheetId, sheetId, needCols);
-
-    document.getElementById('write-bar').style.width = '100%';
-    wLog('¡Escritura completada!', 'ok');
-
-    showResult(rows.length - 1);
-    setStep(6);
 
   } catch(e) {
     wLog('Error: ' + e.message, 'err');
@@ -629,20 +934,347 @@ async function doWrite() {
   }
 }
 
-// ── Construcción de filas ──────────────────────────────────
+// ── Actualización: detectar cambios ───────────────────────
+let diffResult = null; // { added, deleted, renamed, newRows, newMaxDepth }
+
+async function startUpdate() {
+  const fid = xFolderId(document.getElementById('folder-url').value.trim());
+  sheetsUrl = document.getElementById('sheets-url').value.trim();
+  const max = parseInt(document.getElementById('max-items').value) || 100000;
+  const sheetName = document.getElementById('sheet-name').value.trim() || 'Drive Map';
+
+  if (!fid) { alert('Primero ingresá la URL de la carpeta.'); return; }
+  if (!xSheetId(sheetsUrl)) { alert('Primero ingresá la URL del Sheets.'); return; }
+
+  const spreadsheetId = xSheetId(sheetsUrl);
+
+  document.getElementById('update-btn').disabled = true;
+  document.getElementById('scan-btn').disabled = true;
+  document.getElementById('progress-card').style.display = 'block';
+  document.getElementById('verify-card').style.display = 'none';
+  document.getElementById('write-card').classList.add('hidden');
+  document.getElementById('result-card').style.display = 'none';
+  document.getElementById('log-box').innerHTML = '';
+  setStep(4);
+
+  try {
+    // 1. Leer estado actual de Sheets
+    log('Leyendo estado actual de Sheets...', 'info');
+    const oldMap = await readSheetIndex(spreadsheetId, sheetName);
+    if (!oldMap) {
+      log('No se encontró una hoja previa con IDs. Hacé un escaneo completo primero.', 'err');
+      document.getElementById('update-btn').disabled = false;
+      document.getElementById('scan-btn').disabled = false;
+      return;
+    }
+    log(Object.keys(oldMap).length.toLocaleString() + ' ítems en Sheets.', 'ok');
+
+    // 2. Re-escanear Drive — acumulamos el mapa new en memoria
+    log('Re-escaneando Drive...', 'info');
+    scannedRows = [];
+    maxDepthFound = 0;
+    stats = { folders: 0, files: 0 };
+    totalWritten = 0;
+    streamingActive = false;
+    streamSpreadsheetId = spreadsheetId;
+    streamSheetName = sheetName;
+
+    // Usamos un mapa acumulador global durante el escaneo de update
+    window._updateNewMap = {};
+
+    const root = await dGet(fid);
+    await scanWithPool(fid, root.name, root.webViewLink, max, null);
+
+    // Vaciar el buffer restante al mapa (sin hacer flush a Sheets en modo update)
+    for (const row of scannedRows) {
+      if (row.id) window._updateNewMap[row.id] = row;
+    }
+
+    log('Drive escaneado: ' + (stats.folders + stats.files).toLocaleString() + ' ítems.', 'ok');
+    document.getElementById('progress-bar').style.width = '100%';
+
+    // 3. El nuevo mapa ya está en window._updateNewMap
+    const allNew = window._updateNewMap;
+
+    // 4. Calcular diff
+    diffResult = computeDiff(oldMap, allNew);
+
+    log('Diff completado. Añadidos: ' + diffResult.added.length + ', Eliminados: ' + diffResult.deleted.length + ', Renombrados: ' + diffResult.renamed.length, 'ok');
+
+    // 5. Mostrar modal
+    renderDiffModal(diffResult, sheetName);
+
+  } catch(e) {
+    log('Error: ' + e.message, 'err');
+    console.error(e);
+  }
+
+  document.getElementById('update-btn').disabled = false;
+  document.getElementById('scan-btn').disabled = false;
+}
+
+// Lee la hoja de Sheets y construye un mapa { driveId → { name, link, depth, isFolder } }
+async function readSheetIndex(spreadsheetId, sheetName) {
+  try {
+    const data = await sReq('/' + spreadsheetId + '/values/' + encodeURIComponent(sheetName) + '!A1:ZZ?majorDimension=ROWS');
+    const rows = data.values || [];
+    if (rows.length < 2) return null;
+
+    const header = rows[0];
+    const idCol = header.lastIndexOf('ID');
+    const linkCol = header.indexOf('Enlace', 1);
+    const typeCol = header.indexOf('Tipo', 1);
+    if (idCol < 0) return null; // hoja sin columna ID — escaneo antiguo sin soporte
+
+    const map = {};
+    for (let r = 1; r < rows.length; r++) {
+      const row = rows[r];
+      const id = row[idCol] || '';
+      if (!id) continue;
+      // El nombre está en la primera celda no vacía entre col 0 y linkCol-1
+      let name = '';
+      let depth = 0;
+      for (let c = 0; c < linkCol; c++) {
+        if (row[c] && row[c].trim()) { name = row[c].trim(); depth = c; break; }
+      }
+      const link = row[linkCol] || '';
+      const isFolder = (row[typeCol] || '') === 'Carpeta';
+      map[id] = { id, name, link, depth, isFolder };
+    }
+    return map;
+  } catch(e) {
+    return null;
+  }
+}
+
+// Construye mapa nuevo desde scannedRows (en memoria después del re-escaneo)
+// Si el escaneo fue streamed y scannedRows está vacío, volvemos a leer Sheets
+function buildFullScan() {
+  const map = {};
+  for (const row of scannedRows) {
+    if (row.id) map[row.id] = row;
+  }
+  return map;
+}
+
+// Compara old vs new y retorna diff
+function computeDiff(oldMap, newMap) {
+  const added = [];
+  const deleted = [];
+  const renamed = [];
+
+  // IDs en nuevo pero no en viejo → añadidos
+  for (const id in newMap) {
+    if (!oldMap[id]) {
+      added.push(newMap[id]);
+    } else if (oldMap[id].name !== newMap[id].name) {
+      renamed.push({ id, oldName: oldMap[id].name, newName: newMap[id].name, item: newMap[id] });
+    }
+  }
+
+  // IDs en viejo pero no en nuevo → eliminados
+  for (const id in oldMap) {
+    if (!newMap[id]) {
+      deleted.push(oldMap[id]);
+    }
+  }
+
+  return { added, deleted, renamed, newMap };
+}
+
+function renderDiffModal(diff, sheetName) {
+  const { added, deleted, renamed } = diff;
+  const total = added.length + deleted.length + renamed.length;
+
+  // Badges
+  const summaryEl = document.getElementById('diff-summary');
+  if (total === 0) {
+    summaryEl.innerHTML = '<span class="diff-badge badge-none">Sin cambios detectados</span>';
+  } else {
+    summaryEl.innerHTML =
+      (added.length ? '<span class="diff-badge badge-add">+' + added.length + ' añadidos</span>' : '') +
+      (deleted.length ? '<span class="diff-badge badge-del">−' + deleted.length + ' eliminados</span>' : '') +
+      (renamed.length ? '<span class="diff-badge badge-ren">✎ ' + renamed.length + ' renombrados</span>' : '');
+  }
+
+  // Body
+  const bodyEl = document.getElementById('diff-body');
+  if (total === 0) {
+    bodyEl.innerHTML = '<div class="diff-empty">✓ El Drive está sincronizado con Sheets.<br>No hay cambios que aplicar.</div>';
+    document.getElementById('diff-apply-btn').disabled = true;
+  } else {
+    let html = '';
+
+    if (added.length) {
+      html += '<div class="diff-section"><div class="diff-section-title">Añadidos (' + added.length + ')</div>';
+      for (const item of added.slice(0, 200)) {
+        html += '<div class="diff-item di-add"><span class="di-icon">+</span><span class="di-text">' +
+          escH(item.name) + '<span class="di-sub">' + (item.isFolder ? 'Carpeta' : 'Archivo') + ' · profundidad ' + item.depth + '</span></span></div>';
+      }
+      if (added.length > 200) html += '<div class="diff-item" style="color:#aaa">… y ' + (added.length - 200) + ' más</div>';
+      html += '</div>';
+    }
+
+    if (deleted.length) {
+      html += '<div class="diff-section"><div class="diff-section-title">Eliminados (' + deleted.length + ')</div>';
+      for (const item of deleted.slice(0, 200)) {
+        html += '<div class="diff-item di-del"><span class="di-icon">−</span><span class="di-text">' +
+          escH(item.name) + '<span class="di-sub">' + (item.isFolder ? 'Carpeta' : 'Archivo') + '</span></span></div>';
+      }
+      if (deleted.length > 200) html += '<div class="diff-item" style="color:#aaa">… y ' + (deleted.length - 200) + ' más</div>';
+      html += '</div>';
+    }
+
+    if (renamed.length) {
+      html += '<div class="diff-section"><div class="diff-section-title">Renombrados (' + renamed.length + ')</div>';
+      for (const item of renamed.slice(0, 200)) {
+        html += '<div class="diff-item di-ren"><span class="di-icon">✎</span><span class="di-text">' +
+          escH(item.oldName) + ' → ' + escH(item.newName) + '</span></div>';
+      }
+      if (renamed.length > 200) html += '<div class="diff-item" style="color:#aaa">… y ' + (renamed.length - 200) + ' más</div>';
+      html += '</div>';
+    }
+
+    bodyEl.innerHTML = html;
+    document.getElementById('diff-apply-btn').disabled = false;
+  }
+
+  document.getElementById('diff-foot-note').textContent =
+    'La hoja "' + sheetName + '" no se toca. Los cambios se escriben en "' + sheetName + ' - Cambios".';
+
+  document.getElementById('diff-overlay').classList.add('open');
+}
+
+function escH(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function closeDiff() {
+  document.getElementById('diff-overlay').classList.remove('open');
+}
+
+// Aplica el diff: hoja principal INTACTA, solo escribe en hoja de cambios
+// Los ítems NUEVOS se AÑADEN al final de la hoja principal (append).
+// Los eliminados y renombrados quedan registrados en la hoja de cambios para revisión manual.
+async function applyUpdate() {
+  closeDiff();
+  const spreadsheetId = xSheetId(sheetsUrl);
+  const sheetName = document.getElementById('sheet-name').value.trim() || 'Drive Map';
+  const changesSheetName = sheetName + ' - Cambios';
+
+  show('write-card');
+  setStep(6);
+  document.getElementById('write-log').innerHTML = '';
+  document.getElementById('diff-apply-btn').disabled = true;
+
+  const { added, deleted, renamed } = diffResult;
+  const now = new Date().toLocaleString('es-CR');
+
+  try {
+    // ── 1. Añadir ítems nuevos al final de la hoja principal ──────────────
+    if (added.length > 0) {
+      wLog('Añadiendo ' + added.length + ' ítems nuevos a "' + sheetName + '"...', 'info');
+
+      // Leer cuántas filas tiene actualmente para hacer append correcto
+      const meta = await sReq('/' + spreadsheetId + '/values/' + encodeURIComponent(sheetName) + '!A1:A?majorDimension=ROWS');
+      const currentRows = (meta.values || []).length;
+
+      // Leer el header para saber la profundidad máxima actual
+      const headerData = await sReq('/' + spreadsheetId + '/values/' + encodeURIComponent(sheetName) + '!1:1?majorDimension=ROWS');
+      const headerRow = (headerData.values || [[]])[0];
+      const existingLinkCol = headerRow.indexOf('Enlace', 1);
+      const existingMaxDepth = existingLinkCol > 0 ? existingLinkCol - 1 : maxDepthFound;
+
+      // Usar append endpoint para no tocar filas existentes
+      const newRows = added.map(item =>
+        mkRow(item.name, item.link, item.depth, item.isFolder, existingMaxDepth, item.id)
+      );
+
+      for (let i = 0; i < newRows.length; i += CHUNK_SIZE) {
+        const chunk = newRows.slice(i, i + CHUNK_SIZE);
+        await sReq('/' + spreadsheetId + '/values/' + encodeURIComponent(sheetName) + '!A1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS',
+          'POST', { majorDimension: 'ROWS', values: chunk });
+        document.getElementById('write-bar').style.width = Math.round(((i + chunk.length) / newRows.length) * 60) + '%';
+        wLog('Append ' + (i + 1) + '–' + Math.min(i + chunk.length, newRows.length) + ' de ' + newRows.length, 'ok');
+      }
+      wLog(added.length + ' ítems añadidos a "' + sheetName + '".', 'ok');
+    } else {
+      wLog('Sin ítems nuevos que añadir a "' + sheetName + '".', 'info');
+    }
+
+    document.getElementById('write-bar').style.width = '65%';
+
+    // ── 2. Escribir hoja de cambios (acumulativa — NO limpia historial previo) ─
+    wLog('Escribiendo reporte en "' + changesSheetName + '"...', 'info');
+
+    // Verificar si ya existe la hoja para hacer append del historial
+    const allMeta = await sReq('/' + spreadsheetId + '?fields=sheets.properties');
+    const changesExists = (allMeta.sheets || []).some(s => s.properties.title === changesSheetName);
+
+    const changeHeader = ['Fecha', 'Tipo', 'Nombre anterior', 'Nombre nuevo / Actual', 'Enlace', 'Categoría', 'ID Drive'];
+    const changeRows = [];
+
+    for (const item of added) {
+      changeRows.push([now, 'Añadido', '—', item.name, item.link || '', item.isFolder ? 'Carpeta' : 'Archivo', item.id || '']);
+    }
+    for (const item of deleted) {
+      changeRows.push([now, 'Eliminado', item.name, '—', item.link || '', item.isFolder ? 'Carpeta' : 'Archivo', item.id || '']);
+    }
+    for (const item of renamed) {
+      changeRows.push([now, 'Renombrado', item.oldName, item.newName, item.item.link || '', item.item.isFolder ? 'Carpeta' : 'Archivo', item.id || '']);
+    }
+
+    if (!changesExists) {
+      // Primera vez: crear hoja con header
+      const csid = await prepSheet(spreadsheetId, changesSheetName, changeRows.length + 1, 7);
+      const allChangeRows = [changeHeader, ...changeRows];
+      await sReq('/' + spreadsheetId + '/values/' + encodeURIComponent(changesSheetName) + '!A1?valueInputOption=USER_ENTERED',
+        'PUT', { range: changesSheetName + '!A1', majorDimension: 'ROWS', values: allChangeRows });
+      await fmtSheet(spreadsheetId, csid, 7);
+      wLog('Hoja "' + changesSheetName + '" creada con ' + changeRows.length + ' entradas.', 'ok');
+    } else {
+      // Ya existe: append al historial existente (preserva entradas anteriores)
+      if (changeRows.length > 0) {
+        await sReq('/' + spreadsheetId + '/values/' + encodeURIComponent(changesSheetName) + '!A1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS',
+          'POST', { majorDimension: 'ROWS', values: changeRows });
+        wLog(changeRows.length + ' entradas añadidas al historial de "' + changesSheetName + '".', 'ok');
+      } else {
+        wLog('Sin cambios que registrar en "' + changesSheetName + '".', 'info');
+      }
+    }
+
+    document.getElementById('write-bar').style.width = '100%';
+    wLog('¡Listo! Hoja principal intacta. Cambios registrados en "' + changesSheetName + '".', 'ok');
+
+    // Resultado
+    document.getElementById('stat-folders').textContent = stats.folders.toLocaleString();
+    document.getElementById('stat-files').textContent = stats.files.toLocaleString();
+    document.getElementById('stat-rows').textContent = changeRows.length + ' cambios';
+    document.getElementById('result-card').style.display = 'block';
+
+  } catch(e) {
+    wLog('Error al aplicar: ' + e.message, 'err');
+    console.error(e);
+    document.getElementById('diff-apply-btn').disabled = false;
+  }
+}
+
+
+// La última columna es siempre "ID" (Drive file ID) — se usa para diff.
+// Se puede ocultar en Sheets pero es esencial para detectar renombrados.
 function mkHeader(maxDepth) {
   const c = ['Nombre'];
-  for (let i = 1; i <= maxDepth; i++) c.push('');  // columnas de indentación
-  c.push('Enlace', 'Tipo');
+  for (let i = 1; i <= maxDepth; i++) c.push('');
+  c.push('Enlace', 'Tipo', 'ID');
   return c;
 }
 
-function mkRow(name, link, depth, isFolder, maxDepth) {
+function mkRow(name, link, depth, isFolder, maxDepth, driveId) {
   const c = [];
   for (let i = 0; i <= maxDepth; i++) {
     c.push(i === depth ? name : '');
   }
-  c.push(link || '', isFolder ? 'Carpeta' : 'Archivo');
+  c.push(link || '', isFolder ? 'Carpeta' : 'Archivo', driveId || '');
   return c;
 }
 
@@ -775,6 +1407,13 @@ function openSheet() { if (sheetsUrl) window.open(sheetsUrl, '_blank'); }
 function resetApp() {
   scannedRows = [];
   maxDepthFound = 0;
+  totalWritten = 0;
+  streamingActive = false;
+  scanComplete = false;
+  streamSheetId = null;
+  diffResult = null;
+  window._updateNewMap = undefined;
+  sessionStorage.removeItem(CHECKPOINT_KEY);
   document.getElementById('folder-url').value = '';
   document.getElementById('progress-card').style.display = 'none';
   document.getElementById('verify-card').style.display = 'none';
