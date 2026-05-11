@@ -315,7 +315,7 @@ details[open] summary { border-bottom: 1px solid #e8e8e8; background: #fafafa; c
     <div id="verify-notice"></div>
     <div class="verify-grid">
       <div class="vstat">
-        <div class="vstat-label">Filas necesarias</div>
+        <div class="vstat-label">Ítems encontrados</div>
         <div class="vstat-val" id="v-rows">—</div>
       </div>
       <div class="vstat">
@@ -323,19 +323,19 @@ details[open] summary { border-bottom: 1px solid #e8e8e8; background: #fafafa; c
         <div class="vstat-val" id="v-cols">—</div>
       </div>
       <div class="vstat">
-        <div class="vstat-label">Filas disponibles en Sheets</div>
+        <div class="vstat-label">Capacidad de la hoja</div>
         <div class="vstat-val" id="v-sheet-rows">—</div>
       </div>
       <div class="vstat">
-        <div class="vstat-label">Columnas disponibles</div>
+        <div class="vstat-label">Columnas actuales</div>
         <div class="vstat-val" id="v-sheet-cols">—</div>
       </div>
       <div class="vstat">
-        <div class="vstat-label">Profundidad máxima detectada</div>
+        <div class="vstat-label">Profundidad máxima</div>
         <div class="vstat-val" id="v-depth">—</div>
       </div>
       <div class="vstat">
-        <div class="vstat-label">Celdas totales a escribir</div>
+        <div class="vstat-label">Celdas totales</div>
         <div class="vstat-val" id="v-cells">—</div>
       </div>
     </div>
@@ -521,19 +521,22 @@ async function startScan() {
     // scannedRows ya está en orden DFS correcto con maxDepthFound definitivo
     // Escribir todo de una vez (columnas correctas, sin header provisional)
     if (window._updateNewMap === undefined) {
-      log('Escaneo completo: ' + scannedRows.length.toLocaleString() + ' ítems. Escribiendo en Sheets...', 'ok');
+      log('Escaneo completo: ' + scannedRows.length.toLocaleString() + ' ítems encontrados. Escribiendo en Sheets...', 'ok');
       await streamFlush(true);
     }
 
     sessionStorage.removeItem(CHECKPOINT_KEY);
     scanComplete = true;
 
-    const totalItems = totalWritten + scannedRows.length;
-    log('Escaneo completado. ' + (stats.folders + stats.files).toLocaleString() + ' ítems encontrados.', 'ok');
-    if (streamingActive) {
-      log(totalWritten.toLocaleString() + ' filas ya escritas en Sheets durante el escaneo.', 'ok');
-    }
+    const realTotal = stats.folders + stats.files;
+    log('✓ ' + realTotal.toLocaleString() + ' ítems escritos en Sheets (' + stats.folders.toLocaleString() + ' carpetas, ' + stats.files.toLocaleString() + ' archivos).', 'ok');
+    log('Profundidad máxima: ' + maxDepthFound + ' niveles.', 'ok');
     document.getElementById('progress-bar').style.width = '100%';
+    document.getElementById('progress-count').textContent = realTotal.toLocaleString() + ' ítems';
+
+    // Pausa breve para que el usuario pueda leer el log antes de pasar al paso 5
+    log('Preparando verificación...', 'info');
+    await new Promise(r => setTimeout(r, 1800));
 
     await showVerifier(streamSpreadsheetId);
 
@@ -556,27 +559,30 @@ async function scanWithPool(rootId, rootName, rootLink, max, resumeStack) {
   const rootNode = { id: rootId, name: rootName, link: rootLink, isFolder: true, depth: 0, children: [] };
   _scanTree = rootNode;
 
-  // nodeMap: id → node, para insertar hijos en el nodo correcto
   const nodeMap = { [rootId]: rootNode };
 
   // Cola de carpetas pendientes de listar
-  const pending = resumeStack
-    ? resumeStack.map(s => ({ ...s, node: nodeMap[s.folderId] || rootNode }))
+  const queue = resumeStack
+    ? resumeStack.map(s => ({ folderId: s.folderId, node: nodeMap[s.folderId] || rootNode }))
     : [{ folderId: rootId, node: rootNode }];
 
   let active = 0;
   let total = 0;
+  let limitReached = false;
 
-  await new Promise((resolve, reject) => {
+  await new Promise((resolve) => {
+    function tryResolve() {
+      if (active === 0 && queue.length === 0) resolve();
+    }
+
     function pump() {
-      while (active < CONCURRENCY && pending.length > 0 && total < max) {
-        const { folderId, node } = pending.shift();
+      while (active < CONCURRENCY && queue.length > 0 && !limitReached) {
+        const { folderId, node } = queue.shift();
         active++;
 
         listAllChildrenWithRetry(folderId).then(children => {
-          active--;
           for (const child of children) {
-            if (total >= max) break;
+            if (total >= max) { limitReached = true; break; }
             const isFolder = child.mimeType === 'application/vnd.google-apps.folder';
             const childNode = {
               id: child.id,
@@ -593,7 +599,7 @@ async function scanWithPool(rootId, rootName, rootLink, max, resumeStack) {
             if (isFolder) {
               nodeMap[child.id] = childNode;
               stats.folders++;
-              pending.push({ folderId: child.id, node: childNode });
+              queue.push({ folderId: child.id, node: childNode });
             } else {
               stats.files++;
             }
@@ -601,24 +607,25 @@ async function scanWithPool(rootId, rootName, rootLink, max, resumeStack) {
 
           updProg(node.name, total, max);
 
-          if ((stats.folders + stats.files) % 500 === 0) saveCheckpoint(rootId, pending.map(p => ({ folderId: p.folderId, name: p.node.name, link: p.node.link, depth: p.node.depth })));
+          if (limitReached) log('Límite de ' + max.toLocaleString() + ' ítems alcanzado.', 'warn');
+          if ((stats.folders + stats.files) % 500 === 0) {
+            saveCheckpoint(rootId, queue.map(p => ({ folderId: p.folderId, name: p.node.name, link: p.node.link, depth: p.node.depth })));
+          }
 
-          if (active === 0 && pending.length === 0) resolve();
-          else pump();
-        }).catch(e => {
           active--;
+          pump();
+          tryResolve();
+        }).catch(e => {
           log('⚠ No se pudo listar "' + node.name + '": ' + e.message, 'warn');
-          if (active === 0 && pending.length === 0) resolve();
-          else pump();
+          active--;
+          pump();
+          tryResolve();
         });
       }
-      if (total >= max && active === 0) {
-        log('Límite de ' + max.toLocaleString() + ' ítems alcanzado.', 'warn');
-        resolve();
-      }
     }
+
     pump();
-    if (pending.length === 0) resolve();
+    // No llamar tryResolve() aquí: el trabajo async está en vuelo
   });
 
   // Fase 2: DFS sobre el árbol → scannedRows en orden correcto
@@ -773,63 +780,68 @@ async function showVerifier(spreadsheetId) {
   setStep(5);
   document.getElementById('verify-card').style.display = 'block';
 
-  const totalItems = totalWritten + scannedRows.length;
-  const needRows = totalItems + 1; // +1 por encabezado
-  const needCols = maxDepthFound + 1 + 2;  // profundidad + nombre en col propia + Enlace + Tipo
+  // Usar conteo REAL de ítems encontrados, no el límite configurado
+  const realTotal = stats.folders + stats.files;
+  const needRows = realTotal + 1; // +1 por encabezado
+  const needCols = maxDepthFound + 1 + 3; // profundidad + Enlace + Tipo + ID
+  const totalCells = needRows * needCols;
 
-  // Consultar el Sheets para ver cuántas filas/cols tiene actualmente
-  let sheetRows = SHEETS_MAX_ROWS;
-  let sheetCols = SHEETS_MAX_COLS;
-  let sheetName = document.getElementById('sheet-name').value.trim() || 'Drive Map';
+  const sheetName = document.getElementById('sheet-name').value.trim() || 'Drive Map';
 
+  // Consultar Sheets para ver dimensiones actuales de la hoja
+  let sheetRows = 1000;
+  let sheetCols = 26;
+  let sheetExists = false;
   try {
     const meta = await sReq('/' + spreadsheetId + '?fields=sheets.properties');
     const sheetObj = (meta.sheets || []).find(s => s.properties.title === sheetName);
     if (sheetObj) {
-      sheetRows = sheetObj.properties.gridProperties.rowCount || SHEETS_MAX_ROWS;
-      sheetCols = sheetObj.properties.gridProperties.columnCount || SHEETS_MAX_COLS;
-    } else {
-      sheetRows = 1000;
-      sheetCols = 26;
+      sheetRows = sheetObj.properties.gridProperties.rowCount || 1000;
+      sheetCols = sheetObj.properties.gridProperties.columnCount || 26;
+      sheetExists = true;
     }
   } catch(e) { /* usar defaults */ }
 
-  const totalCells = needRows * needCols;
   const rowsOk = needRows <= SHEETS_MAX_ROWS;
   const colsOk = needCols <= SHEETS_MAX_COLS;
   const canFit = rowsOk && colsOk;
   const willExpand = needRows > sheetRows || needCols > sheetCols;
 
-  document.getElementById('v-rows').textContent = needRows.toLocaleString();
+  // Filas: mostrar ítems reales encontrados
+  document.getElementById('v-rows').textContent = realTotal.toLocaleString() + ' ítems';
   document.getElementById('v-rows').className = 'vstat-val ' + (rowsOk ? 'ok' : 'err');
 
-  document.getElementById('v-cols').textContent = needCols.toLocaleString();
+  document.getElementById('v-cols').textContent = needCols + ' columnas';
   document.getElementById('v-cols').className = 'vstat-val ' + (colsOk ? 'ok' : 'err');
 
-  document.getElementById('v-sheet-rows').textContent = sheetRows.toLocaleString() + (willExpand ? ' (se expandirá)' : '');
-  document.getElementById('v-sheet-rows').className = 'vstat-val ' + (needRows <= SHEETS_MAX_ROWS ? 'ok' : 'err');
+  // Capacidad de la hoja: mostrar real vs necesario
+  const sheetCapacityText = sheetExists
+    ? sheetRows.toLocaleString() + ' filas' + (willExpand ? ' → se expandirá a ' + needRows.toLocaleString() : ' ✓')
+    : 'Hoja nueva (se creará)';
+  document.getElementById('v-sheet-rows').textContent = sheetCapacityText;
+  document.getElementById('v-sheet-rows').className = 'vstat-val ' + (rowsOk ? 'ok' : 'err');
 
-  document.getElementById('v-sheet-cols').textContent = sheetCols.toLocaleString() + (needCols > sheetCols ? ' (se expandirá)' : '');
-  document.getElementById('v-sheet-cols').className = 'vstat-val ' + (needCols <= SHEETS_MAX_COLS ? 'ok' : 'err');
+  document.getElementById('v-sheet-cols').textContent = sheetCols + ' cols actuales' + (needCols > sheetCols ? ' → ' + needCols + ' necesarias' : ' ✓');
+  document.getElementById('v-sheet-cols').className = 'vstat-val ' + (colsOk ? 'ok' : 'err');
 
   document.getElementById('v-depth').textContent = maxDepthFound + ' niveles';
   document.getElementById('v-depth').className = 'vstat-val ok';
 
-  document.getElementById('v-cells').textContent = totalCells.toLocaleString();
-  document.getElementById('v-cells').className = 'vstat-val';
+  document.getElementById('v-cells').textContent = totalCells.toLocaleString() + ' celdas';
+  document.getElementById('v-cells').className = 'vstat-val ' + (totalCells <= 10000000 ? 'ok' : 'err');
 
   const noticeEl = document.getElementById('verify-notice');
   if (!canFit) {
-    noticeEl.innerHTML = '<div class="notice-danger"><strong>No es posible escribir.</strong> Los datos exceden los límites de Google Sheets (máx. 10M de celdas). Reduce la cantidad de ítems.</div>';
+    noticeEl.innerHTML = '<div class="notice-danger"><strong>No es posible escribir.</strong> Los ' + realTotal.toLocaleString() + ' ítems exceden los límites de Google Sheets (máx. 10M de celdas). Reducí la cantidad en el campo "Límite de ítems".</div>';
     document.getElementById('write-btn').disabled = true;
   } else if (streamingActive) {
-    noticeEl.innerHTML = '<div class="notice-success"><strong>' + totalWritten.toLocaleString() + ' filas ya escritas durante el escaneo.</strong> Solo queda aplicar el formato final y corregir el encabezado de columnas con la profundidad real (' + maxDepthFound + ' niveles).</div>';
+    noticeEl.innerHTML = '<div class="notice-success"><strong>' + realTotal.toLocaleString() + ' ítems ya escritos en Sheets.</strong> Solo queda aplicar formato final y ocultar la columna ID.</div>';
     document.getElementById('write-btn').disabled = false;
   } else if (willExpand) {
-    noticeEl.innerHTML = '<div class="notice-info"><strong>La hoja se expandirá automáticamente</strong> para acomodar los datos antes de escribir. El contenido actual <strong>no se borrará</strong> hasta confirmar.</div>';
+    noticeEl.innerHTML = '<div class="notice-info"><strong>La hoja se expandirá automáticamente</strong> para acomodar los ' + realTotal.toLocaleString() + ' ítems. El contenido actual <strong>no se borrará</strong> hasta confirmar.</div>';
     document.getElementById('write-btn').disabled = false;
   } else {
-    noticeEl.innerHTML = '<div class="notice-success"><strong>Todo listo.</strong> Los datos caben perfectamente. El contenido actual de la hoja se reemplazará al confirmar.</div>';
+    noticeEl.innerHTML = '<div class="notice-success"><strong>Todo listo.</strong> ' + realTotal.toLocaleString() + ' ítems caben perfectamente en la hoja.</div>';
     document.getElementById('write-btn').disabled = false;
   }
 }
