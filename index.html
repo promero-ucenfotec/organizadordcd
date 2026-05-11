@@ -518,8 +518,10 @@ async function startScan() {
 
     await scanWithPool(fid, root.name, root.webViewLink, max, resumeStack);
 
-    // Flush final: escribir lo que quede en el buffer
-    if (scannedRows.length > 0) {
+    // scannedRows ya está en orden DFS correcto con maxDepthFound definitivo
+    // Escribir todo de una vez (columnas correctas, sin header provisional)
+    if (window._updateNewMap === undefined) {
+      log('Escaneo completo: ' + scannedRows.length.toLocaleString() + ' ítems. Escribiendo en Sheets...', 'ok');
       await streamFlush(true);
     }
 
@@ -543,98 +545,104 @@ async function startScan() {
 }
 
 // ── Escaneo con pool de concurrencia ──────────────────────
-// Procesa hasta CONCURRENCY carpetas en paralelo sin superar el límite de Drive API
+// Fase 1: recopila TODA la estructura en un árbol en memoria (paralelo, rápido).
+// Fase 2: recorre el árbol en DFS para generar scannedRows en orden jerárquico.
+// Fase 3: escribe a Sheets en chunks con las columnas definitivas.
+
+// Árbol de nodos: { id, name, link, isFolder, depth, children[] }
+let _scanTree = null;
+
 async function scanWithPool(rootId, rootName, rootLink, max, resumeStack) {
-  // Cola de trabajo: cada elemento es { folderId, name, link, depth }
-  const queue = resumeStack || [{ folderId: rootId, name: rootName, link: rootLink, depth: 0 }];
+  const rootNode = { id: rootId, name: rootName, link: rootLink, isFolder: true, depth: 0, children: [] };
+  _scanTree = rootNode;
+
+  // nodeMap: id → node, para insertar hijos en el nodo correcto
+  const nodeMap = { [rootId]: rootNode };
+
+  // Cola de carpetas pendientes de listar
+  const pending = resumeStack
+    ? resumeStack.map(s => ({ ...s, node: nodeMap[s.folderId] || rootNode }))
+    : [{ folderId: rootId, node: rootNode }];
+
   let active = 0;
-  let done = false;
-  let errors = 0;
+  let total = 0;
 
-  // Semáforo simple basado en Promise
-  const results = [];
-
-  async function processOne(item) {
-    const { folderId, name, link, depth } = item;
-
-    // Registrar esta carpeta (con su ID de Drive)
-    scannedRows.push({ id: folderId, name, link, depth, isFolder: true });
-    stats.folders++;
-    if (depth > maxDepthFound) maxDepthFound = depth;
-    updProg(name, stats.folders + stats.files, max);
-
-    // Listar hijos (con retry en 429)
-    let children;
-    try {
-      children = await listAllChildrenWithRetry(folderId);
-    } catch(e) {
-      errors++;
-      log('⚠ No se pudo listar "' + name + '": ' + e.message, 'warn');
-      return [];
-    }
-
-    const subFolders = [];
-    for (const item of children) {
-      if ((stats.folders + stats.files) >= max) break;
-      if (item.mimeType === 'application/vnd.google-apps.folder') {
-        subFolders.push(item);
-      } else {
-        scannedRows.push({ id: item.id, name: item.name, link: item.webViewLink, depth: depth + 1, isFolder: false });
-        stats.files++;
-        if ((depth + 1) > maxDepthFound) maxDepthFound = depth + 1;
-      }
-    }
-
-    // Guardar checkpoint periódicamente
-    if ((stats.folders + stats.files) % 500 === 0) {
-      saveCheckpoint(rootId, queue);
-    }
-
-    // Trigger streaming si el buffer supera el umbral
-    if (scannedRows.length >= STREAM_THRESHOLD) {
-      await streamFlush(false);
-    }
-
-    // Retornar sub-carpetas para encolar (con ID)
-    return subFolders.map(sf => ({ folderId: sf.id, name: sf.name, link: sf.webViewLink, depth: depth + 1 }));
-  }
-
-  // Pool loop: mantiene hasta CONCURRENCY tareas activas
-  return new Promise((resolve, reject) => {
-    let pending = [...queue];
-    queue.length = 0; // vaciamos para reusar como cola dinámica
-
+  await new Promise((resolve, reject) => {
     function pump() {
-      while (active < CONCURRENCY && pending.length > 0 && (stats.folders + stats.files) < max) {
-        const item = pending.shift();
+      while (active < CONCURRENCY && pending.length > 0 && total < max) {
+        const { folderId, node } = pending.shift();
         active++;
-        processOne(item).then(newItems => {
+
+        listAllChildrenWithRetry(folderId).then(children => {
           active--;
-          if (newItems.length > 0) {
-            // Insertar al frente mantiene DFS (orden similar al original)
-            pending.unshift(...newItems);
+          for (const child of children) {
+            if (total >= max) break;
+            const isFolder = child.mimeType === 'application/vnd.google-apps.folder';
+            const childNode = {
+              id: child.id,
+              name: child.name,
+              link: child.webViewLink || '',
+              isFolder,
+              depth: node.depth + 1,
+              children: []
+            };
+            node.children.push(childNode);
+            total++;
+            if (node.depth + 1 > maxDepthFound) maxDepthFound = node.depth + 1;
+
+            if (isFolder) {
+              nodeMap[child.id] = childNode;
+              stats.folders++;
+              pending.push({ folderId: child.id, node: childNode });
+            } else {
+              stats.files++;
+            }
           }
-          if (active === 0 && pending.length === 0) {
-            resolve();
-          } else {
-            pump();
-          }
+
+          updProg(node.name, total, max);
+
+          if ((stats.folders + stats.files) % 500 === 0) saveCheckpoint(rootId, pending.map(p => ({ folderId: p.folderId, name: p.node.name, link: p.node.link, depth: p.node.depth })));
+
+          if (active === 0 && pending.length === 0) resolve();
+          else pump();
         }).catch(e => {
           active--;
-          reject(e);
+          log('⚠ No se pudo listar "' + node.name + '": ' + e.message, 'warn');
+          if (active === 0 && pending.length === 0) resolve();
+          else pump();
         });
       }
-      // Si llegamos al límite de ítems y no hay nada activo
-      if ((stats.folders + stats.files) >= max && active === 0) {
+      if (total >= max && active === 0) {
         log('Límite de ' + max.toLocaleString() + ' ítems alcanzado.', 'warn');
         resolve();
       }
     }
-
     pump();
-    // Caso borde: queue vacío desde el inicio
     if (pending.length === 0) resolve();
   });
+
+  // Fase 2: DFS sobre el árbol → scannedRows en orden correcto
+  log('Ordenando ' + total.toLocaleString() + ' ítems jerárquicamente...', 'info');
+  scannedRows = [];
+  function dfsCollect(node) {
+    scannedRows.push({ id: node.id, name: node.name, link: node.link, depth: node.depth, isFolder: node.isFolder });
+    // Ordenar hijos: carpetas primero, luego archivos, ambos alfabéticos
+    const sorted = node.children.slice().sort((a, b) => {
+      if (a.isFolder !== b.isFolder) return a.isFolder ? -1 : 1;
+      return a.name.localeCompare(b.name, 'es', { sensitivity: 'base' });
+    });
+    for (const child of sorted) dfsCollect(child);
+  }
+  // La raíz misma se incluye solo si es distinta de un nodo artificial
+  dfsCollect(rootNode);
+
+  // Modo update: acumular mapa para diff
+  if (window._updateNewMap !== undefined) {
+    for (const row of scannedRows) {
+      if (row.id) window._updateNewMap[row.id] = row;
+    }
+    return;
+  }
 }
 
 // ── Checkpoint ─────────────────────────────────────────────
@@ -642,7 +650,7 @@ function saveCheckpoint(folderId, queue) {
   try {
     sessionStorage.setItem(CHECKPOINT_KEY, JSON.stringify({
       folderId,
-      stack: queue.slice(0, 200), // guardar solo las primeras 200 carpetas pendientes
+      stack: queue.slice(0, 200),
       scanned: stats.folders + stats.files,
       written: totalWritten,
       maxDepth: maxDepthFound,
@@ -652,61 +660,52 @@ function saveCheckpoint(folderId, queue) {
   } catch(e) { /* sessionStorage lleno, ignorar */ }
 }
 
-// ── Streaming: escribir buffer a Sheets mientras se escanea ─
+// ── Escritura a Sheets (post-escaneo, con columnas definitivas) ─
 async function streamFlush(isFinal) {
   if (scannedRows.length === 0) return;
 
-  const batch = scannedRows.splice(0, scannedRows.length); // vaciar buffer
+  // Modo update: ya acumulado en _updateNewMap, no escribir a Sheets
+  if (window._updateNewMap !== undefined) return;
+
+  const batch = scannedRows.splice(0, scannedRows.length);
 
   if (!streamingActive) {
-    // Primera vez: preparar la hoja y escribir el header
-    log('Preparando hoja para escritura en streaming...', 'info');
+    log('Preparando hoja...', 'info');
     try {
-      // Crear hoja con tamaño inicial generoso; se expandirá si hace falta
-      streamSheetId = await prepSheet(streamSpreadsheetId, streamSheetName, 50000, 30);
-      // Escribir header
-      const header = mkHeader(20); // 20 niveles de profundidad máxima provisional
+      streamSheetId = await prepSheet(streamSpreadsheetId, streamSheetName,
+        batch.length + 10000, maxDepthFound + 4);
+      // Header con profundidad REAL (ya conocida al terminar el escaneo)
+      const header = mkHeader(maxDepthFound);
       await sReq('/' + streamSpreadsheetId + '/values/' + encodeURIComponent(streamSheetName) + '!A1?valueInputOption=USER_ENTERED',
         'PUT', { range: streamSheetName + '!A1', majorDimension: 'ROWS', values: [header] });
       totalWritten = 0;
       streamingActive = true;
-      log('Hoja lista. Escribiendo en streaming...', 'ok');
+      log('Hoja lista. Escribiendo ' + batch.length.toLocaleString() + ' ítems ordenados...', 'ok');
     } catch(e) {
-      // Si falla el streaming, reagregar al buffer y continuar solo en memoria
       scannedRows.unshift(...batch);
-      log('Streaming no disponible, modo memoria activado: ' + e.message, 'warn');
+      log('Error preparando hoja: ' + e.message, 'err');
       return;
     }
   }
 
-  // Escribir el batch en chunks
-  const rows = batch.map(item => mkRow(item.name, item.link, item.depth, item.isFolder, 20, item.id));
-
-  // Si estamos en modo update, acumular en el mapa en lugar de escribir a Sheets
-  if (window._updateNewMap !== undefined) {
-    for (const item of batch) {
-      if (item.id) window._updateNewMap[item.id] = item;
-    }
-    totalWritten += rows.length;
-    if (!isFinal) log('Escaneados: ' + (totalWritten).toLocaleString() + ' (acumulando para diff...)', 'info');
-    return;
-  }
-  for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
-    const chunk = rows.slice(i, i + CHUNK_SIZE);
-    const startRow = totalWritten + 2 + i; // +2: fila 1 es header
+  // Escribir con maxDepthFound definitivo → Enlace e ID en columnas correctas
+  for (let i = 0; i < batch.length; i += CHUNK_SIZE) {
+    const chunk = batch.slice(i, i + CHUNK_SIZE);
+    const rows = chunk.map(item => mkRow(item.name, item.link, item.depth, item.isFolder, maxDepthFound, item.id));
+    const startRow = totalWritten + 2 + i;
     const range = streamSheetName + '!A' + startRow;
     try {
       await sReq('/' + streamSpreadsheetId + '/values/' + encodeURIComponent(range) + '?valueInputOption=USER_ENTERED',
-        'PUT', { range, majorDimension: 'ROWS', values: chunk });
+        'PUT', { range, majorDimension: 'ROWS', values: rows });
+      document.getElementById('progress-bar').style.width =
+        Math.min(50 + Math.round((totalWritten + i + chunk.length) / (totalWritten + batch.length) * 45), 95) + '%';
     } catch(e) {
-      log('Error al escribir streaming chunk: ' + e.message, 'warn');
+      log('Error escribiendo chunk: ' + e.message, 'warn');
     }
   }
 
-  totalWritten += rows.length;
-  if (!isFinal) {
-    log('Streaming: ' + totalWritten.toLocaleString() + ' filas escritas (escaneo continúa...)', 'info');
-  }
+  totalWritten += batch.length;
+  log('Escritos ' + totalWritten.toLocaleString() + ' ítems en Sheets.', 'ok');
 }
 
 // Lista TODOS los hijos con retry automático en 429 (rate limit)
@@ -847,42 +846,18 @@ async function doWrite() {
 
   try {
     if (streamingActive) {
-      // MODO STREAMING: los datos ya están en Sheets, solo corregir header y formato
-      wLog('Datos ya escritos durante el escaneo (' + totalWritten.toLocaleString() + ' filas).', 'ok');
-      wLog('Corrigiendo encabezado con profundidad real (' + maxDepthFound + ' niveles)...', 'info');
+      // MODO STREAMING: datos + header ya escritos correctamente durante el escaneo
+      wLog(totalWritten.toLocaleString() + ' filas ya escritas en Sheets.', 'ok');
+      wLog('Aplicando formato y ocultando columna ID...', 'info');
 
-      // Actualizar header con la profundidad real
-      const realHeader = mkHeader(maxDepthFound);
-      await sReq('/' + spreadsheetId + '/values/' + encodeURIComponent(sheetName) + '!A1?valueInputOption=USER_ENTERED',
-        'PUT', { range: sheetName + '!A1', majorDimension: 'ROWS', values: [realHeader] });
-      wLog('Encabezado corregido.', 'ok');
-
-      // Expandir hoja si la profundidad real requiere más columnas que las 20 provisionales
-      const needCols = maxDepthFound + 1 + 2;
-      if (needCols > 20 + 2) {
-        const meta = await sReq('/' + spreadsheetId + '?fields=sheets.properties');
-        const sheetObj = (meta.sheets || []).find(s => s.properties.title === sheetName);
-        if (sheetObj) {
-          const sid = sheetObj.properties.sheetId;
-          const curCols = sheetObj.properties.gridProperties.columnCount || 26;
-          if (needCols > curCols) {
-            await sReq('/' + spreadsheetId + ':batchUpdate', 'POST', {
-              requests: [{ updateSheetProperties: {
-                properties: { sheetId: sid, gridProperties: { columnCount: needCols + 2 } },
-                fields: 'gridProperties.columnCount'
-              }}]
-            });
-            wLog('Columnas expandidas a ' + (needCols + 2) + '.', 'ok');
-          }
-          wLog('Aplicando formato...', 'info');
-          await fmtSheet(spreadsheetId, sid, needCols);
-        }
-      } else {
-        wLog('Aplicando formato...', 'info');
-        // Obtener sheetId para formato
-        const meta = await sReq('/' + spreadsheetId + '?fields=sheets.properties');
-        const sheetObj = (meta.sheets || []).find(s => s.properties.title === sheetName);
-        if (sheetObj) await fmtSheet(spreadsheetId, sheetObj.properties.sheetId, needCols);
+      const needCols = maxDepthFound + 1 + 3; // profundidad + Enlace + Tipo + ID
+      const meta = await sReq('/' + spreadsheetId + '?fields=sheets.properties');
+      const sheetObj = (meta.sheets || []).find(s => s.properties.title === sheetName);
+      if (sheetObj) {
+        const sid = sheetObj.properties.sheetId;
+        await fmtSheet(spreadsheetId, sid, needCols);
+        // Ocultar columna ID (última)
+        await hideIdColumn(spreadsheetId, sid, needCols - 1);
       }
 
       document.getElementById('write-bar').style.width = '100%';
@@ -920,6 +895,7 @@ async function doWrite() {
 
       wLog('Aplicando formato...', 'info');
       await fmtSheet(spreadsheetId, sheetId, needCols);
+      await hideIdColumn(spreadsheetId, sheetId, needCols - 1);
 
       document.getElementById('write-bar').style.width = '100%';
       wLog('¡Escritura completada!', 'ok');
@@ -1358,6 +1334,19 @@ async function fmtSheet(spreadsheetId, sheetId, numCols) {
       dimensions: { sheetId, dimension: 'COLUMNS', startIndex: 0, endIndex: numCols }
     }}
   ]});
+}
+
+// Oculta la columna ID (última) para que no sea visible pero siga disponible para el diff
+async function hideIdColumn(spreadsheetId, sheetId, colIndex) {
+  try {
+    await sReq('/' + spreadsheetId + ':batchUpdate', 'POST', { requests: [
+      { updateDimensionProperties: {
+        range: { sheetId, dimension: 'COLUMNS', startIndex: colIndex, endIndex: colIndex + 1 },
+        properties: { hiddenByUser: true },
+        fields: 'hiddenByUser'
+      }}
+    ]});
+  } catch(e) { /* no crítico si falla */ }
 }
 
 // ── Drive API ──────────────────────────────────────────────
